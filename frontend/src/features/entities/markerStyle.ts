@@ -1,5 +1,5 @@
 import L from 'leaflet'
-import type { EntityType, Status } from './entity'
+import type { Entity, EntityType, Status } from './entity'
 
 // How an Entity looks on the map: colour = Status, icon = Entity Type.
 // The legend reads the same tables, so the two can never disagree.
@@ -19,14 +19,37 @@ export const ENTITY_TYPE_ICONS: Record<EntityType, string> = {
 }
 
 const MARKER_SIZE = 32
+/** The selected marker is drawn larger with a dark ring around it. */
+const SELECTED_MARKER_SIZE = 44
 
-/** A round marker filled with the Status colour, showing the Entity Type icon. */
-export function markerIcon(type: EntityType, status: Status): L.DivIcon {
+/**
+ * A round marker filled with the Status colour, showing the Entity Type icon.
+ * The Entity's name is in the marker as screen-reader text, which also gives
+ * the (keyboard-focusable) marker its accessible name.
+ */
+export function markerIcon(entity: Entity, { selected = false } = {}): L.DivIcon {
+  const size = selected ? SELECTED_MARKER_SIZE : MARKER_SIZE
+  const border = selected ? '4px solid #1e3a8a' : '2px solid white'
+  const shadow = selected ? '0 0 0 3px white, 0 2px 8px rgba(0,0,0,.6)' : '0 1px 4px rgba(0,0,0,.4)'
   return L.divIcon({
     className: '', // drop Leaflet's default white square
-    html: `<div style="width:${MARKER_SIZE}px;height:${MARKER_SIZE}px;background:${STATUS_COLORS[status]};border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:16px">${ENTITY_TYPE_ICONS[type]}</div>`,
-    iconSize: [MARKER_SIZE, MARKER_SIZE],
-    iconAnchor: [MARKER_SIZE / 2, MARKER_SIZE / 2],
-    tooltipAnchor: [0, -MARKER_SIZE / 2],
+    html:
+      `<div style="width:${size}px;height:${size}px;background:${STATUS_COLORS[entity.status]};border:${border};border-radius:50%;box-shadow:${shadow};box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:16px">` +
+      `<span aria-hidden="true">${ENTITY_TYPE_ICONS[entity.type]}</span>` +
+      `<span class="sr-only">${escapeHtml(entity.name)}</span>` +
+      `</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    tooltipAnchor: [0, -size / 2],
   })
+}
+
+/** divIcon takes raw HTML; an Entity name must never be able to inject markup. */
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
 }

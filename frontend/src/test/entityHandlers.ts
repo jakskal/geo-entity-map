@@ -42,6 +42,31 @@ export function listEntitiesHandler(entities: Entity[]) {
   })
 }
 
+const ONE_URL = '/api/entities/:id'
+
+/**
+ * GET /api/entities/:id answering from the given Entities, with the backend's
+ * 404 body for any other id.
+ */
+export function getEntityHandler(entities: Entity[]) {
+  return http.get(ONE_URL, ({ params }) => {
+    const entity = entities.find((candidate) => candidate.id === params.id)
+    return entity ? HttpResponse.json(entity) : notFoundResponse()
+  })
+}
+
+/** GET /api/entities/:id always answering 404, as for an Entity deleted elsewhere. */
+export function getEntityNotFoundHandler() {
+  return http.get(ONE_URL, () => notFoundResponse())
+}
+
+function notFoundResponse(requestId = 'req-get-404') {
+  return HttpResponse.json(
+    { error: 'not_found', message: 'entity not found', requestId },
+    { status: 404, headers: { 'X-Request-ID': requestId } },
+  )
+}
+
 /** GET /api/entities that never answers, to observe the loading state. */
 export function listEntitiesPendingHandler() {
   return http.get(LIST_URL, async () => {

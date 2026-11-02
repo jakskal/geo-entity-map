@@ -11,8 +11,16 @@ const DEFAULT_ZOOM = 13
 /** Don't zoom in further than street level when fitting a single Entity. */
 const FIT_MAX_ZOOM = 15
 
+type EntityMapProps = {
+  entities: Entity[]
+  /** The Entity whose marker is highlighted, if any. */
+  selectedEntityId?: string | null
+  /** Called with the Entity whose marker was clicked. */
+  onSelectEntity?: (entity: Entity) => void
+}
+
 /** Full-size OpenStreetMap map with one marker per Entity at its Location. */
-export function EntityMap({ entities }: { entities: Entity[] }) {
+export function EntityMap({ entities, selectedEntityId, onSelectEntity }: EntityMapProps) {
   return (
     <div data-testid="entity-map" className="h-full w-full">
       <MapContainer center={BANDUNG} zoom={DEFAULT_ZOOM} className="h-full w-full">
@@ -20,16 +28,20 @@ export function EntityMap({ entities }: { entities: Entity[] }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {entities.map((entity) => (
-          <Marker
-            key={entity.id}
-            position={[entity.latitude, entity.longitude]}
-            icon={markerIcon(entity.type, entity.status)}
-            alt={entity.name}
-          >
-            <Tooltip>{entity.name}</Tooltip>
-          </Marker>
-        ))}
+        {entities.map((entity) => {
+          const selected = entity.id === selectedEntityId
+          return (
+            <Marker
+              key={entity.id}
+              position={[entity.latitude, entity.longitude]}
+              icon={markerIcon(entity, { selected })}
+              zIndexOffset={selected ? 1000 : 0}
+              eventHandlers={{ click: () => onSelectEntity?.(entity) }}
+            >
+              <Tooltip>{entity.name}</Tooltip>
+            </Marker>
+          )
+        })}
         <FitToEntitiesOnce entities={entities} />
       </MapContainer>
     </div>

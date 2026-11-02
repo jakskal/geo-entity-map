@@ -49,6 +49,14 @@ describe('Entity map', () => {
     expect(screen.queryByText(/No Entities yet/)).not.toBeInTheDocument()
   })
 
+  it('names each marker after its Entity, showing markup in a name as plain text', async () => {
+    renderApp({
+      handlers: [listEntitiesHandler([makeEntity({ name: 'Pump <b>North</b>' })])],
+    })
+
+    expect(await screen.findByRole('button', { name: 'Pump <b>North</b>' })).toBeInTheDocument()
+  })
+
   it('has a legend listing every Entity Type and Status', async () => {
     renderApp({ handlers: [listEntitiesHandler([])] })
 
