@@ -20,6 +20,9 @@ func NewHandler(pool *pgxpool.Pool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/entities", h.list)
 	mux.HandleFunc("GET /api/entities/{id}", h.get)
+	mux.HandleFunc("POST /api/entities", h.create)
+	mux.HandleFunc("PUT /api/entities/{id}", h.update)
+	mux.HandleFunc("DELETE /api/entities/{id}", h.delete)
 	mux.HandleFunc("/", httpx.NotFound)
 	return mux
 }
@@ -76,4 +79,77 @@ func (h handler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, e)
+}
+
+// create answers POST /api/entities with the stored Entity.
+func (h handler) create(w http.ResponseWriter, r *http.Request) {
+	in, ok := readInput(w, r)
+	if !ok {
+		return
+	}
+	e, err := h.store.create(r.Context(), in)
+	if err != nil {
+		httpx.InternalError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusCreated, e)
+}
+
+// update answers PUT /api/entities/{id}: a full replace of the writable
+// fields. A malformed id is treated as unknown.
+func (h handler) update(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		httpx.NotFound(w, r)
+		return
+	}
+	in, ok := readInput(w, r)
+	if !ok {
+		return
+	}
+	e, err := h.store.update(r.Context(), id, in)
+	if errors.Is(err, errNotFound) {
+		httpx.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		httpx.InternalError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, e)
+}
+
+// delete answers DELETE /api/entities/{id} with 204 and no body. A
+// malformed id is treated as unknown.
+func (h handler) delete(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		httpx.NotFound(w, r)
+		return
+	}
+	err = h.store.delete(r.Context(), id)
+	if errors.Is(err, errNotFound) {
+		httpx.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		httpx.InternalError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// readInput decodes and validates a write body. If it is unusable, it
+// writes the 400 or 422 response and returns false.
+func readInput(w http.ResponseWriter, r *http.Request) (Input, bool) {
+	req, err := decodeWriteRequest(w, r)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, httpx.CodeBadRequest, err.Error(), nil)
+		return Input{}, false
+	}
+	if fields := req.validate(); len(fields) > 0 {
+		httpx.WriteError(w, r, http.StatusUnprocessableEntity, httpx.CodeValidationFailed, "invalid Entity", fields)
+		return Input{}, false
+	}
+	return req.toInput(), true
 }

@@ -63,13 +63,9 @@ func (s store) get(ctx context.Context, id uuid.UUID) (Entity, error) {
 
 // create stores a new Entity. It does not validate; callers do.
 func (s store) create(ctx context.Context, in Input) (Entity, error) {
-	attrs := in.Attributes
-	if attrs == nil {
-		attrs = map[string]string{}
-	}
-	attrsJSON, err := json.Marshal(attrs)
+	attrsJSON, err := encodeAttributes(in.Attributes)
 	if err != nil {
-		return Entity{}, fmt.Errorf("encode attributes: %w", err)
+		return Entity{}, err
 	}
 	row, err := s.q.CreateEntity(ctx, db.CreateEntityParams{
 		Name:        in.Name,
@@ -86,6 +82,44 @@ func (s store) create(ctx context.Context, in Input) (Entity, error) {
 	return fromRow(row)
 }
 
+// update replaces the writable fields of an Entity, keeping createdAt and
+// refreshing updatedAt. It does not validate; callers do.
+func (s store) update(ctx context.Context, id uuid.UUID, in Input) (Entity, error) {
+	attrsJSON, err := encodeAttributes(in.Attributes)
+	if err != nil {
+		return Entity{}, err
+	}
+	row, err := s.q.UpdateEntity(ctx, db.UpdateEntityParams{
+		ID:          id,
+		Name:        in.Name,
+		Type:        in.Type,
+		Status:      in.Status,
+		Latitude:    in.Latitude,
+		Longitude:   in.Longitude,
+		Description: in.Description,
+		Attributes:  attrsJSON,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Entity{}, errNotFound
+	}
+	if err != nil {
+		return Entity{}, fmt.Errorf("update entity %s: %w", id, err)
+	}
+	return fromRow(row)
+}
+
+// delete removes an Entity for good.
+func (s store) delete(ctx context.Context, id uuid.UUID) error {
+	n, err := s.q.DeleteEntity(ctx, id)
+	if err != nil {
+		return fmt.Errorf("delete entity %s: %w", id, err)
+	}
+	if n == 0 {
+		return errNotFound
+	}
+	return nil
+}
+
 func (s store) count(ctx context.Context) (int64, error) {
 	n, err := s.q.CountEntities(ctx)
 	if err != nil {
@@ -97,4 +131,16 @@ func (s store) count(ctx context.Context) (int64, error) {
 // optionalText maps "" to SQL NULL, which the list query treats as "no filter".
 func optionalText(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: s != ""}
+}
+
+// encodeAttributes turns Attributes into JSONB, storing nil as {}.
+func encodeAttributes(attrs map[string]string) ([]byte, error) {
+	if attrs == nil {
+		attrs = map[string]string{}
+	}
+	b, err := json.Marshal(attrs)
+	if err != nil {
+		return nil, fmt.Errorf("encode attributes: %w", err)
+	}
+	return b, nil
 }

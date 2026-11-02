@@ -65,6 +65,18 @@ func (q *Queries) CreateEntity(ctx context.Context, arg CreateEntityParams) (Ent
 	return i, err
 }
 
+const deleteEntity = `-- name: DeleteEntity :execrows
+DELETE FROM entities WHERE id = $1
+`
+
+func (q *Queries) DeleteEntity(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteEntity, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getEntity = `-- name: GetEntity :one
 SELECT id, name, type, status, latitude, longitude, description, attributes, created_at, updated_at FROM entities WHERE id = $1
 `
@@ -129,4 +141,51 @@ func (q *Queries) ListEntities(ctx context.Context, arg ListEntitiesParams) ([]E
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateEntity = `-- name: UpdateEntity :one
+UPDATE entities
+SET name = $2, type = $3, status = $4, latitude = $5, longitude = $6,
+    description = $7, attributes = $8, updated_at = now()
+WHERE id = $1
+RETURNING id, name, type, status, latitude, longitude, description, attributes, created_at, updated_at
+`
+
+type UpdateEntityParams struct {
+	ID          uuid.UUID
+	Name        string
+	Type        string
+	Status      string
+	Latitude    float64
+	Longitude   float64
+	Description string
+	Attributes  []byte
+}
+
+// Full replace of the writable fields; created_at is kept, updated_at refreshed.
+func (q *Queries) UpdateEntity(ctx context.Context, arg UpdateEntityParams) (Entity, error) {
+	row := q.db.QueryRow(ctx, updateEntity,
+		arg.ID,
+		arg.Name,
+		arg.Type,
+		arg.Status,
+		arg.Latitude,
+		arg.Longitude,
+		arg.Description,
+		arg.Attributes,
+	)
+	var i Entity
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Type,
+		&i.Status,
+		&i.Latitude,
+		&i.Longitude,
+		&i.Description,
+		&i.Attributes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

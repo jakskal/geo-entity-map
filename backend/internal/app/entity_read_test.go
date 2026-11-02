@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"net/http/httptest"
 
-	"github.com/jakskal/geo-entity-map/backend/internal/db"
 	"github.com/jakskal/geo-entity-map/backend/internal/entity"
 )
 
@@ -28,18 +27,19 @@ type entityJSON struct {
 	UpdatedAt   string            `json:"updatedAt"`
 }
 
-// givenEntity stores an Entity as test setup. Assertions always go through HTTP.
-// TODO(#05): switch to POST /api/entities once create exists.
-func givenEntity(t *testing.T, pool *pgxpool.Pool, name, entityType, status string) string {
+// givenEntity creates an Entity through POST /api/entities as test setup and
+// returns its id.
+func givenEntity(t *testing.T, srv *httptest.Server, name, entityType, status string) string {
 	t.Helper()
-	e, err := db.New(pool).CreateEntity(context.Background(), db.CreateEntityParams{
-		Name: name, Type: entityType, Status: status,
-		Latitude: -6.9, Longitude: 107.6, Attributes: []byte("{}"),
-	})
-	if err != nil {
-		t.Fatal(err)
+	body := map[string]any{
+		"name": name, "type": entityType, "status": status,
+		"latitude": -6.9, "longitude": 107.6,
 	}
-	return e.ID.String()
+	resp := send(t, http.MethodPost, srv.URL+"/api/entities", mustJSON(t, body), nil)
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("create %q: status = %d, want 201", name, resp.StatusCode)
+	}
+	return decode[entityJSON](t, resp).ID
 }
 
 func decode[T any](t *testing.T, resp *http.Response) T {
@@ -77,11 +77,11 @@ func TestListEntitiesReturnsEmptyArrayWhenNoEntities(t *testing.T) {
 }
 
 func TestListEntitiesSortsByNameThenID(t *testing.T) {
-	srv, pool := newServerWithPool(t)
-	givenEntity(t, pool, "Charlie", "vehicle", "active")
-	idA := givenEntity(t, pool, "Alpha", "facility", "offline")
-	idB := givenEntity(t, pool, "Alpha", "iot_device", "active")
-	givenEntity(t, pool, "Bravo", "other", "maintenance")
+	srv := newServer(t)
+	givenEntity(t, srv, "Charlie", "vehicle", "active")
+	idA := givenEntity(t, srv, "Alpha", "facility", "offline")
+	idB := givenEntity(t, srv, "Alpha", "iot_device", "active")
+	givenEntity(t, srv, "Bravo", "other", "maintenance")
 
 	resp := get(t, srv.URL+"/api/entities", nil)
 
@@ -108,8 +108,8 @@ func TestListEntitiesSortsByNameThenID(t *testing.T) {
 }
 
 func TestEntityJSONShapeUsesCamelCaseAndUTCTimestamps(t *testing.T) {
-	srv, pool := newServerWithPool(t)
-	id := givenEntity(t, pool, "Truck 7", "vehicle", "active")
+	srv := newServer(t)
+	id := givenEntity(t, srv, "Truck 7", "vehicle", "active")
 
 	resp := get(t, srv.URL+"/api/entities/"+id, nil)
 
@@ -152,11 +152,11 @@ func TestListEntitiesFiltersByEntityTypeAndStatus(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			srv, pool := newServerWithPool(t)
-			givenEntity(t, pool, "Active vehicle", "vehicle", "active")
-			givenEntity(t, pool, "Offline vehicle", "vehicle", "offline")
-			givenEntity(t, pool, "Active facility", "facility", "active")
-			givenEntity(t, pool, "Inactive IoT device", "iot_device", "inactive")
+			srv := newServer(t)
+			givenEntity(t, srv, "Active vehicle", "vehicle", "active")
+			givenEntity(t, srv, "Offline vehicle", "vehicle", "offline")
+			givenEntity(t, srv, "Active facility", "facility", "active")
+			givenEntity(t, srv, "Inactive IoT device", "iot_device", "inactive")
 
 			resp := get(t, srv.URL+"/api/entities"+tc.query, nil)
 
@@ -220,9 +220,9 @@ func TestListEntitiesRejectsInvalidFilters(t *testing.T) {
 }
 
 func TestGetEntityReturnsTheEntity(t *testing.T) {
-	srv, pool := newServerWithPool(t)
-	id := givenEntity(t, pool, "Warehouse", "facility", "maintenance")
-	givenEntity(t, pool, "Other one", "other", "active")
+	srv := newServer(t)
+	id := givenEntity(t, srv, "Warehouse", "facility", "maintenance")
+	givenEntity(t, srv, "Other one", "other", "active")
 
 	resp := get(t, srv.URL+"/api/entities/"+id, nil)
 
@@ -312,7 +312,7 @@ func TestSeedLoadsSampleEntitiesAroundBandungOnce(t *testing.T) {
 
 func TestSeedDoesNothingWhenEntitiesExist(t *testing.T) {
 	srv, pool := newServerWithPool(t)
-	givenEntity(t, pool, "Existing", "other", "active")
+	givenEntity(t, srv, "Existing", "other", "active")
 
 	if err := entity.Seed(context.Background(), pool); err != nil {
 		t.Fatal(err)
