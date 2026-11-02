@@ -122,8 +122,8 @@ These are things only a real browser can check. Start the stack with `docker com
 8. A failed drag snaps back: run `docker compose kill backend` (instant; `stop` waits for a graceful shutdown), drag a marker, and check that within a few seconds it returns to its saved Location with an error. Then run `docker compose start backend`.
 9. Clicking a row in the side list moves the map to that Entity and selects it.
 10. The Entity Type and Status filters change both the list and the markers.
-11. Panels (list, details, form, legend) never overlap each other.
-12. At a narrow window width (about 375 px), the layout stays usable and the side list collapses.
+11. Panels (list, details, form, legend) and notices (loading, load error with Retry, failed move) never overlap each other.
+12. At a narrow window width (about 375 px), the layout stays usable: the side list collapses, the legend starts collapsed behind "Show legend", and notices sit above the legend instead of covering it.
 
 ## Not implemented / out of scope
 

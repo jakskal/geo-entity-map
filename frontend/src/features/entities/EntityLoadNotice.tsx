@@ -2,11 +2,12 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import { requestIdSuffix } from '../../api/client'
 import type { Entity } from './entity'
 
-const NOTICE = 'absolute top-4 left-1/2 z-[1000] -translate-x-1/2 rounded bg-white px-4 py-2 shadow'
+const NOTICE = 'max-w-full rounded bg-white px-4 py-2 shadow'
 
 /**
- * Loading, error (with retry) and empty-state notices over the map. With
- * filters active, an empty result is reported by the side list instead.
+ * Loading, error (with retry) and empty-state notices, placed by the caller
+ * in the map's notice region. With filters active, an empty result is
+ * reported by the side list instead.
  */
 export function EntityLoadNotice({
   query,

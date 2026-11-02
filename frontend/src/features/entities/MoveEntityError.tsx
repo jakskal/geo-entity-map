@@ -1,6 +1,9 @@
 import { ApiError, generalMessage, requestIdSuffix } from '../../api/client'
 
-/** Notice that a dragged marker's new Location was not saved (the marker is already back). */
+/**
+ * Notice that a dragged marker's new Location was not saved (the marker is
+ * already back). Placed by the caller in the map's notice region.
+ */
 export function MoveEntityError({
   entityName,
   error,
@@ -18,7 +21,7 @@ export function MoveEntityError({
   return (
     <div
       role="alert"
-      className="absolute bottom-20 left-1/2 z-[1000] flex -translate-x-1/2 items-start gap-3 rounded bg-red-50 px-4 py-2 text-sm text-red-700 shadow"
+      className="flex max-w-full items-start gap-3 rounded bg-red-50 px-4 py-2 text-sm text-red-700 shadow"
     >
       <p>
         Could not move {entityName}: {reason}

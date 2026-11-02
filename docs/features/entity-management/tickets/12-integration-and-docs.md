@@ -25,3 +25,4 @@ Spec: `docs/features/entity-management/spec.md` — read it first; this ticket o
 - 2026-11-02 — Developer's manual browser check found: stopping the backend took long; a drag with the backend down waited ~60s before a 502; the move-error notice (bottom) overlapped the map legend and the load-error notice with Retry (top) overlapped the side list at narrow widths.
 - Fixed: `stop_grace_period: 3s` for backend and frontend, checklist item 8 now uses `docker compose kill backend`.
 - Fixed: nginx proxy timeouts (connect 5s), a 10s client request timeout shown as the general error, and one query retry instead of three (`docs/log.md` row 34).
+- Fixed: the map controls are one flow layout (side list at top, shrinking; notice region; legend and "Add Entity" along the bottom), so notices never cover the list or legend; the legend is collapsible below `sm`; side panels are capped to the screen width.

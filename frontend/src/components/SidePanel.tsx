@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 
-const SHELL = 'absolute top-4 right-4 z-[1000] max-h-[calc(100%-2rem)] rounded bg-white shadow-lg'
+const SHELL = 'absolute top-4 right-4 z-[1000] max-h-[calc(100%-2rem)] max-w-[calc(100%-2rem)] rounded bg-white shadow-lg'
 
 /**
  * The panel in the map's top-right corner (Entity details, create and edit

@@ -26,6 +26,7 @@ const SELECT = 'w-full rounded border border-gray-300 bg-white px-2 py-1'
 /**
  * Side list of the Entities shown on the map, with Entity Type and Status
  * filters, a count and "Clear filters". Collapsible so it fits narrow screens.
+ * Placed by the caller; it shrinks (scrolling its rows) to leave room below.
  */
 export function EntityList({
   entities,
@@ -40,7 +41,7 @@ export function EntityList({
   return (
     <section
       aria-labelledby="entity-list-title"
-      className="absolute top-4 left-14 z-[1000] flex max-h-[calc(100vh-15rem)] w-72 max-w-[calc(100vw-4.5rem)] flex-col rounded bg-white/95 text-sm shadow"
+      className="flex min-h-0 w-72 max-w-full flex-col self-start rounded bg-white/95 text-sm shadow"
     >
       <header className="flex items-center justify-between gap-2 p-3">
         <h2 id="entity-list-title" className="font-semibold">

@@ -1,17 +1,35 @@
+import { useState } from 'react'
 import { ENTITY_TYPE_LABELS, ENTITY_TYPES, STATUS_LABELS, STATUSES } from './entity'
 import { ENTITY_TYPE_ICONS, STATUS_COLORS } from './markerStyle'
 
-/** Explains marker colours (Status) and icons (Entity Type). */
+/**
+ * Explains marker colours (Status) and icons (Entity Type). Placed by the
+ * caller. On narrow screens it starts collapsed behind a toggle; from `sm` up
+ * it is always open and the toggle is hidden.
+ */
 export function MapLegend() {
+  const [open, setOpen] = useState(false)
+
   return (
     <section
       aria-labelledby="map-legend-title"
-      className="absolute bottom-6 left-4 z-[1000] rounded bg-white/95 p-3 text-sm shadow"
+      className="rounded bg-white/95 p-3 text-sm shadow"
     >
-      <h2 id="map-legend-title" className="mb-2 font-semibold">
-        Legend
-      </h2>
-      <div className="flex gap-6">
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="map-legend-title" className="font-semibold">
+          Legend
+        </h2>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="map-legend-body"
+          onClick={() => setOpen(!open)}
+          className="rounded px-2 py-1 text-blue-700 hover:bg-blue-50 sm:hidden"
+        >
+          {open ? 'Hide legend' : 'Show legend'}
+        </button>
+      </div>
+      <div id="map-legend-body" className={`${open ? 'flex' : 'hidden'} mt-2 gap-6 sm:flex`}>
         <div>
           <h3 className="mb-1 text-xs font-medium text-gray-500 uppercase">Status</h3>
           <ul className="space-y-1">

@@ -60,30 +60,44 @@ export function App() {
           moveEntity.mutateAsync({ id: entity.id, input: { ...entityToInput(entity), ...location } })
         }
       />
-      {moveEntity.isError && (
-        <MoveEntityError
-          entityName={moveEntity.variables.input.name}
-          error={moveEntity.error}
-          onDismiss={moveEntity.reset}
-        />
-      )}
-      <EntityLoadNotice query={entities} filtered={hasActiveFilters(filters)} />
-      <EntityList
-        entities={entities.data ?? []}
-        filters={filters}
-        onFiltersChange={setFilters}
-        selectedEntityId={selectedEntityId}
-        onSelectEntity={selectEntityFromList}
-      />
-      <MapLegend />
-
-      <button
-        type="button"
-        onClick={() => mapRef.current && openCreateForm(toLocation(mapRef.current.getCenter()))}
-        className="absolute right-4 bottom-6 z-[1000] rounded bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700"
-      >
-        Add Entity
-      </button>
+      {/*
+        Controls over the map, laid out in normal flow so they never overlap:
+        side list at the top (shrinks to leave room), then the notice region,
+        then legend and "Add Entity" along the bottom. The overlay lets map
+        gestures through; only its children take pointer events. pl-14 keeps
+        clear of Leaflet's zoom buttons.
+      */}
+      <div className="pointer-events-none absolute inset-0 z-[1000] flex flex-col gap-2 pt-4 pr-4 pb-6 pl-14">
+        <div className="flex min-h-0 flex-col *:pointer-events-auto">
+          <EntityList
+            entities={entities.data ?? []}
+            filters={filters}
+            onFiltersChange={setFilters}
+            selectedEntityId={selectedEntityId}
+            onSelectEntity={selectEntityFromList}
+          />
+        </div>
+        <div className="mt-auto flex flex-col items-center gap-2 *:pointer-events-auto">
+          <EntityLoadNotice query={entities} filtered={hasActiveFilters(filters)} />
+          {moveEntity.isError && (
+            <MoveEntityError
+              entityName={moveEntity.variables.input.name}
+              error={moveEntity.error}
+              onDismiss={moveEntity.reset}
+            />
+          )}
+        </div>
+        <div className="flex flex-wrap items-end justify-between gap-2 *:pointer-events-auto">
+          <MapLegend />
+          <button
+            type="button"
+            onClick={() => mapRef.current && openCreateForm(toLocation(mapRef.current.getCenter()))}
+            className="ml-auto rounded bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700"
+          >
+            Add Entity
+          </button>
+        </div>
+      </div>
       {selectedEntityId && (
         <EntityDetailsPanel
           key={selectedEntityId}

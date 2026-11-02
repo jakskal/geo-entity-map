@@ -68,4 +68,20 @@ describe('Entity map', () => {
       expect(within(legend).getByText(label)).toBeInTheDocument()
     }
   })
+
+  // Narrow screens start with the legend collapsed (CSS shows it from `sm` up).
+  it('has a legend toggle for narrow screens', async () => {
+    const user = userEvent.setup()
+    renderApp({ handlers: [listEntitiesHandler([])] })
+    const legend = screen.getByRole('region', { name: 'Legend' })
+
+    const toggle = within(legend).getByRole('button', { name: 'Show legend' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(toggle)
+    expect(within(legend).getByRole('button', { name: 'Hide legend' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+  })
 })
