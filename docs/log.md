@@ -29,10 +29,11 @@
 | 25 | Docs layout | Cross-cutting docs at root `docs/`; area docs in `backend/docs/`, `frontend/docs/`; one root glossary | Each side gets its own context; one domain = one glossary | All docs in one folder, per-area glossaries |
 | 26 | Agent instructions | `AGENTS.md` holds content at root, `backend/`, `frontend/`; each `CLAUDE.md` is only `@AGENTS.md` | Works for Claude Code and other tools with one source of truth | CLAUDE.md only, symlinks (break on Windows), duplicated content |
 | 27 | Test seam | One seam: the HTTP API contract. Backend tested through HTTP against real PostgreSQL (testcontainers-go), no mocks; frontend tested with Vitest + Testing Library against MSW fake API; map gestures checked manually | Tests prove real behaviour incl. SQL; survive refactors; no mock interfaces to explain | Layer-by-layer unit tests with mocks, E2E |
+| 28 | Request tracing | `X-Request-ID` (reuse incoming or generate UUID), returned in header + error body, in every `log/slog` JSON log line; shown in frontend error messages | Cheap way to trace one request through logs; pairs with generic 500 messages | Client header like `X-Client: iot-fe` (forgeable, false security without auth), OpenTelemetry (overkill) |
 
 ## Process
 
 - 2026-11-02 — Repo created (`jakskal/geo-entity-map`, public). Grilling round 1 (/grill-with-docs): 13 decisions settled, all on the AI's recommendation; developer confirmed PostgreSQL over SQLite.
 - 2026-11-02 — Grilling round 2: 9 decisions settled. Developer questioned "Go 1.22" → clarified it named the stdlib routing feature, switched to latest Go 1.27 and dropped chi for the stdlib router. Toolchain installed via gvm/nvm.
 - 2026-11-02 — Skills setup (/setup-matt-pocock-skills): developer chose per-area docs, feature folders, and AGENTS.md + CLAUDE.md import so other AI tools can use the instructions.
-- 2026-11-02 — Spec (/to-spec): `docs/features/entity-management/spec.md`, 71 user stories. Developer asked what a seam is and whether it meant mocking → agreed on one HTTP seam with no backend mocks.
+- 2026-11-02 — Spec (/to-spec): `docs/features/entity-management/spec.md`, 71 user stories. Developer asked what a seam is and whether it meant mocking → agreed on one HTTP seam with no backend mocks. Developer proposed an `X-Client: iot-fe` header → AI advised against (forgeable without auth); developer chose to add `X-Request-ID` tracing instead.
