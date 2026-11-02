@@ -40,3 +40,20 @@ export const STATUS_LABELS: Record<Status, string> = {
   maintenance: 'Maintenance',
   offline: 'Offline',
 }
+
+/** The writable fields sent when creating or updating an Entity. */
+export type EntityInput = {
+  name: string
+  type: EntityType
+  status: Status
+  latitude: number
+  longitude: number
+  description: string
+  attributes: Record<string, string>
+}
+
+/** A Location as latitude and longitude. */
+export type Location = {
+  latitude: number
+  longitude: number
+}

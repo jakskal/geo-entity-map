@@ -1,5 +1,5 @@
 import { delay, http, HttpResponse } from 'msw'
-import type { Entity } from '../features/entities/entity'
+import type { Entity, EntityInput } from '../features/entities/entity'
 
 // Reusable MSW handlers that answer like the Go API's Entity endpoints.
 
@@ -40,6 +40,49 @@ export function listEntitiesHandler(entities: Entity[]) {
       .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
     return HttpResponse.json(matching)
   })
+}
+
+/**
+ * POST /api/entities answering 201 with the created Entity, like the backend:
+ * server-assigned id and timestamps, trimmed name. Pass the same array to
+ * `listEntitiesHandler` to have later list requests include it.
+ */
+export function createEntityHandler(store: Entity[] = []) {
+  return http.post<never, EntityInput>(LIST_URL, async ({ request }) => {
+    const input = await request.json()
+    const created = makeEntity({
+      ...input,
+      name: input.name.trim(),
+      createdAt: '2026-11-02T09:00:00Z',
+      updatedAt: '2026-11-02T09:00:00Z',
+    })
+    store.push(created)
+    return HttpResponse.json(created, { status: 201 })
+  })
+}
+
+/**
+ * Any Entity endpoint failing with the backend's error body, e.g. a 422
+ * `validation_failed` with `fields`, or a 500 `internal`.
+ */
+export function entityErrorResponse({
+  status,
+  fields,
+  requestId = `req-${status}`,
+}: {
+  status: number
+  fields?: Record<string, string>
+  requestId?: string
+}) {
+  const body = fields
+    ? { error: 'validation_failed', message: 'validation failed', fields, requestId }
+    : { error: 'internal', message: 'internal server error', requestId }
+  return HttpResponse.json(body, { status, headers: { 'X-Request-ID': requestId } })
+}
+
+/** POST /api/entities failing with the given error (see entityErrorResponse). */
+export function createEntityErrorHandler(error: Parameters<typeof entityErrorResponse>[0]) {
+  return http.post(LIST_URL, () => entityErrorResponse(error))
 }
 
 /** GET /api/entities that never answers, to observe the loading state. */

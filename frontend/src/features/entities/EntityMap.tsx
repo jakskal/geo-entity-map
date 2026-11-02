@@ -1,8 +1,8 @@
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import { useEffect, useRef } from 'react'
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
-import type { Entity } from './entity'
+import { useEffect, useRef, type Ref } from 'react'
+import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
+import type { Entity, Location } from './entity'
 import { markerIcon } from './markerStyle'
 
 /** Bandung, West Java — where the sample Entities live. */
@@ -11,11 +11,19 @@ const DEFAULT_ZOOM = 13
 /** Don't zoom in further than street level when fitting a single Entity. */
 const FIT_MAX_ZOOM = 15
 
+type EntityMapProps = {
+  entities: Entity[]
+  /** Receives the Leaflet map, e.g. to read its centre. */
+  mapRef?: Ref<L.Map>
+  /** Called with the Location of a click on empty map (not on a marker). */
+  onMapClick?: (location: Location) => void
+}
+
 /** Full-size OpenStreetMap map with one marker per Entity at its Location. */
-export function EntityMap({ entities }: { entities: Entity[] }) {
+export function EntityMap({ entities, mapRef, onMapClick }: EntityMapProps) {
   return (
     <div data-testid="entity-map" className="h-full w-full">
-      <MapContainer center={BANDUNG} zoom={DEFAULT_ZOOM} className="h-full w-full">
+      <MapContainer ref={mapRef} center={BANDUNG} zoom={DEFAULT_ZOOM} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -31,9 +39,22 @@ export function EntityMap({ entities }: { entities: Entity[] }) {
           </Marker>
         ))}
         <FitToEntitiesOnce entities={entities} />
+        {onMapClick && <MapClickListener onMapClick={onMapClick} />}
       </MapContainer>
     </div>
   )
+}
+
+/** Location of a Leaflet point, rounded to 6 decimals (about 10 cm). */
+export function toLocation(point: L.LatLng): Location {
+  const round = (value: number) => Math.round(value * 1e6) / 1e6
+  return { latitude: round(point.lat), longitude: round(point.lng) }
+}
+
+/** Reports clicks on empty map; marker clicks don't reach the map. */
+function MapClickListener({ onMapClick }: { onMapClick: (location: Location) => void }) {
+  useMapEvents({ click: (event) => onMapClick(toLocation(event.latlng)) })
+  return null
 }
 
 /**

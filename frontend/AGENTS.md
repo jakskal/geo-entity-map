@@ -46,6 +46,7 @@ Docker: `Dockerfile` builds the app and serves it with nginx, which forwards `/a
 ## Testing
 
 - The one seam is the HTTP API. Tests render the real app with `renderApp({ handlers })` from `src/test/renderApp.tsx` and let MSW play the backend at `/api`, answering like the Go API (including 422 bodies with `fields` and `requestId`). No other mocks.
+- Reusable handlers live in `src/test/entityHandlers.ts` (`makeEntity`, list/create handlers, `entityErrorResponse` for 422/500 bodies). Pass one array to both `listEntitiesHandler` and `createEntityHandler` so created Entities show up on refetch. `renderApp` also returns its `queryClient` for checking list data.
 - Each test gets a fresh QueryClient (no retries) and its own handlers; handlers are reset after every test. A request with no handler fails the test.
 - Leaflet's map gestures (click-to-create, marker drag, marker colours/icons) are not automated; they are on the README's manual checklist.
 - TypeScript is 6.0.x, not 7: see `docs/log.md` (typescript-eslint does not support 7 yet).
