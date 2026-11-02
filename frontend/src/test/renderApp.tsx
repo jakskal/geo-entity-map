@@ -19,9 +19,11 @@ export function renderApp({ handlers = [] }: { handlers?: RequestHandler[] } = {
       mutations: { retry: false },
     },
   })
-  return render(
+  const result = render(
     <AppProviders queryClient={queryClient}>
       <App />
     </AppProviders>,
   )
+  // The QueryClient lets a test check what the app holds as server data.
+  return { ...result, queryClient }
 }
