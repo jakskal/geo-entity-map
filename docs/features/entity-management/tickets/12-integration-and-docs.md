@@ -19,3 +19,8 @@ Spec: `docs/features/entity-management/spec.md` — read it first; this ticket o
 - [x] Root `AGENTS.md` workflow status updated; every ticket's `Status:` is `done` — 01–11 are `done`; #12 stays `ready-for-human` until the manual check and merge
 - [ ] Integration branch merged into `main` with a `--no-ff` merge summarising the parallel build — pending developer approval
 - [x] Submission email drafted for the developer to send (not sent) — kept outside the repo for the developer
+
+## Comments
+
+- 2026-11-02 — Developer's manual browser check found: stopping the backend took long; a drag with the backend down waited ~60s before a 502; the move-error notice (bottom) overlapped the map legend and the load-error notice with Retry (top) overlapped the side list at narrow widths.
+- Fixed: `stop_grace_period: 3s` for backend and frontend, checklist item 8 now uses `docker compose kill backend`.

@@ -24,6 +24,10 @@ services:
 
   backend:
     build: ./backend
+    # Docker waits this long for a graceful stop before killing. The Go server
+    # shuts down well within it; the default 10s only adds waiting on hosts
+    # where the stop signal is not delivered.
+    stop_grace_period: 3s
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-entities}:${POSTGRES_PASSWORD:-entities}@db:5432/${POSTGRES_DB:-entities}?sslmode=disable
       PORT: "8080"
@@ -40,6 +44,7 @@ services:
 
   frontend:
     build: ./frontend
+    stop_grace_period: 3s
     environment:
       # nginx forwards /api/ here; the service name "backend" resolves on the Compose network.
       BACKEND_URL: http://backend:8080

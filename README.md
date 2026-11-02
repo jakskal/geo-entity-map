@@ -119,7 +119,7 @@ These are things only a real browser can check. Start the stack with `docker com
 5. Clicking empty map opens the create form with that Location filled in. Saving adds the marker.
 6. "Add Entity" opens the create form at the map's current centre.
 7. Dragging a marker to a new spot saves it. Reload the page and the marker stays at the new Location.
-8. A failed drag snaps back: run `docker compose stop backend`, drag a marker, and check that it returns to its saved Location with an error. Then run `docker compose start backend`.
+8. A failed drag snaps back: run `docker compose kill backend` (instant; `stop` waits for a graceful shutdown), drag a marker, and check that within a few seconds it returns to its saved Location with an error. Then run `docker compose start backend`.
 9. Clicking a row in the side list moves the map to that Entity and selects it.
 10. The Entity Type and Status filters change both the list and the markers.
 11. Panels (list, details, form, legend) never overlap each other.
