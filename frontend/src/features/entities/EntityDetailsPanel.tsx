@@ -1,6 +1,7 @@
-import { useId, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { ApiError } from '../../api/client'
 import { useEntity } from '../../api/entities'
+import { EditEntityPanel } from './EditEntityPanel'
 import { ENTITY_TYPE_LABELS, STATUS_LABELS, type Entity } from './entity'
 
 const timestampFormat = new Intl.DateTimeFormat(undefined, {
@@ -17,6 +18,12 @@ export function formatTimestamp(iso: string): string {
 export function EntityDetailsPanel({ entityId, onClose }: { entityId: string; onClose: () => void }) {
   const entity = useEntity(entityId)
   const titleId = useId()
+  // While editing, the edit form takes the panel's place; closing it shows the details again.
+  const [editing, setEditing] = useState(false)
+
+  if (editing && entity.data) {
+    return <EditEntityPanel entity={entity.data} onClose={() => setEditing(false)} />
+  }
 
   return (
     <section
@@ -45,7 +52,15 @@ export function EntityDetailsPanel({ entityId, onClose }: { entityId: string; on
 
       {/* Actions for the shown Entity: Edit (ticket 09) and Delete (ticket 10) go here. */}
       {entity.data && (
-        <div role="group" aria-label="Actions" className="flex gap-2 border-t p-4" />
+        <div role="group" aria-label="Actions" className="flex gap-2 border-t p-4">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+          >
+            Edit
+          </button>
+        </div>
       )}
     </section>
   )

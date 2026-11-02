@@ -49,6 +49,34 @@ export function useCreateEntity() {
   })
 }
 
+/**
+ * Replaces an Entity's writable fields with a full PUT. On success the get-one
+ * cache gets the saved Entity and every cached list shows it (or drops it when
+ * it no longer matches that list's filters), then all Entity queries are
+ * refetched in the background so the server's data wins.
+ */
+export function useUpdateEntity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: EntityInput }) =>
+      apiFetch<Entity>(`/entities/${encodeURIComponent(id)}`, { method: 'PUT', body: input }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(entityKeys.detail(updated.id), updated)
+      const lists = queryClient.getQueriesData<Entity[]>({ queryKey: entityKeys.lists() })
+      for (const [queryKey, entities] of lists) {
+        if (!entities) continue
+        const filters = (queryKey[2] ?? {}) as EntityFilters
+        const others = entities.filter((entity) => entity.id !== updated.id)
+        queryClient.setQueryData(
+          queryKey,
+          matchesFilters(updated, filters) ? [...others, updated] : others,
+        )
+      }
+      void queryClient.invalidateQueries({ queryKey: entityKeys.all })
+    },
+  })
+}
+
 function matchesFilters(entity: Entity, filters: EntityFilters): boolean {
   return (
     (!filters.type || entity.type === filters.type) &&

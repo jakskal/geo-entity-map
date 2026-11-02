@@ -1,16 +1,19 @@
 import type L from 'leaflet'
 import { useRef, useState } from 'react'
-import { useEntities } from './api/entities'
+import { useEntities, useUpdateEntity } from './api/entities'
 import { CreateEntityPanel } from './features/entities/CreateEntityPanel'
-import type { Location } from './features/entities/entity'
+import { entityToInput, type Location } from './features/entities/entity'
 import { EntityDetailsPanel } from './features/entities/EntityDetailsPanel'
 import { EntityListState } from './features/entities/EntityListState'
 import { EntityMap, toLocation } from './features/entities/EntityMap'
 import { MapLegend } from './features/entities/MapLegend'
+import { MoveEntityError } from './features/entities/MoveEntityError'
 
 export function App() {
   const entities = useEntities()
   const mapRef = useRef<L.Map>(null)
+  // Saves the Location of a dragged marker; its error is shown until dismissed or the next drag.
+  const moveEntity = useUpdateEntity()
   // The details panel and the create form share the top-right corner, so at
   // most one is open: opening either closes the other.
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
@@ -35,7 +38,17 @@ export function App() {
         selectedEntityId={selectedEntityId}
         onSelectEntity={(entity) => selectEntity(entity.id)}
         onMapClick={openCreateForm}
+        onMoveEntity={(entity, location) =>
+          moveEntity.mutateAsync({ id: entity.id, input: { ...entityToInput(entity), ...location } })
+        }
       />
+      {moveEntity.isError && (
+        <MoveEntityError
+          entityName={moveEntity.variables.input.name}
+          error={moveEntity.error}
+          onDismiss={moveEntity.reset}
+        />
+      )}
       <EntityListState query={entities} />
       <MapLegend />
 

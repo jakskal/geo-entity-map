@@ -52,6 +52,19 @@ export type EntityInput = {
   attributes: Record<string, string>
 }
 
+/** An Entity's current writable fields, e.g. to send a full update with a new Location. */
+export function entityToInput(entity: Entity): EntityInput {
+  return {
+    name: entity.name,
+    type: entity.type,
+    status: entity.status,
+    latitude: entity.latitude,
+    longitude: entity.longitude,
+    description: entity.description ?? '',
+    attributes: entity.attributes ?? {},
+  }
+}
+
 /** A Location as latitude and longitude. */
 export type Location = {
   latitude: number

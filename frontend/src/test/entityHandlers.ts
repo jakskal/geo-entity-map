@@ -110,6 +110,34 @@ export function createEntityErrorHandler(error: Parameters<typeof entityErrorRes
   return http.post(LIST_URL, () => entityErrorResponse(error))
 }
 
+/**
+ * PUT /api/entities/:id answering 200 with the updated Entity, like the backend:
+ * full replace of the writable fields, trimmed name, `createdAt` kept and
+ * `updatedAt` refreshed; 404 for an id not in the store. The Entity is replaced
+ * in `store`, so pass the same array to the list and get-one handlers.
+ */
+export function updateEntityHandler(store: Entity[]) {
+  return http.put<{ id: string }, EntityInput>(ONE_URL, async ({ params, request }) => {
+    const index = store.findIndex((entity) => entity.id === params.id)
+    if (index === -1) return notFoundResponse('req-put-404')
+    const input = await request.json()
+    const updated: Entity = {
+      ...input,
+      name: input.name.trim(),
+      id: store[index].id,
+      createdAt: store[index].createdAt,
+      updatedAt: '2026-11-02T10:00:00Z',
+    }
+    store[index] = updated
+    return HttpResponse.json(updated)
+  })
+}
+
+/** PUT /api/entities/:id failing with the given error (see entityErrorResponse). */
+export function updateEntityErrorHandler(error: Parameters<typeof entityErrorResponse>[0]) {
+  return http.put(ONE_URL, () => entityErrorResponse(error))
+}
+
 /** GET /api/entities that never answers, to observe the loading state. */
 export function listEntitiesPendingHandler() {
   return http.get(LIST_URL, async () => {

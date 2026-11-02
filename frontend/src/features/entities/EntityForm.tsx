@@ -280,7 +280,8 @@ function formFieldFor(field: string): FieldPath<EntityFormValues> | undefined {
   return undefined
 }
 
-function generalMessage(error: unknown): string {
+/** A failed request as one message for the operator, with the request ID when known. */
+export function generalMessage(error: unknown): string {
   if (error instanceof ApiError && error.requestId) {
     return `Something went wrong (request id: ${error.requestId})`
   }
