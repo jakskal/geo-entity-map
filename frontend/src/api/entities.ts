@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Entity, EntityFilters, EntityInput } from '../features/entities/entity'
 import { apiFetch } from './client'
 
@@ -15,6 +15,9 @@ export function useEntities(filters: EntityFilters = {}) {
   return useQuery({
     queryKey: entityKeys.list(filters),
     queryFn: ({ signal }) => apiFetch<Entity[]>(`/entities${toQueryString(filters)}`, { signal }),
+    // Keep showing the last result while a new filter loads, so the map and
+    // list don't blank out on every filter change.
+    placeholderData: keepPreviousData,
   })
 }
 

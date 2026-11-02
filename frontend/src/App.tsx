@@ -2,14 +2,20 @@ import type L from 'leaflet'
 import { useRef, useState } from 'react'
 import { useEntities } from './api/entities'
 import { CreateEntityPanel } from './features/entities/CreateEntityPanel'
-import type { Location } from './features/entities/entity'
+import type { Entity, EntityFilters, Location } from './features/entities/entity'
 import { EntityDetailsPanel } from './features/entities/EntityDetailsPanel'
+import { EntityList } from './features/entities/EntityList'
 import { EntityListState } from './features/entities/EntityListState'
 import { EntityMap, toLocation } from './features/entities/EntityMap'
 import { MapLegend } from './features/entities/MapLegend'
 
+/** Zoom used when jumping to an Entity from the list (unless already closer). */
+const LIST_SELECT_ZOOM = 16
+
 export function App() {
-  const entities = useEntities()
+  // Filters go to the server; the map and the side list render the same result.
+  const [filters, setFilters] = useState<EntityFilters>({})
+  const entities = useEntities(filters)
   const mapRef = useRef<L.Map>(null)
   // The details panel and the create form share the top-right corner, so at
   // most one is open: opening either closes the other.
@@ -20,6 +26,12 @@ export function App() {
   function selectEntity(id: string) {
     setNewEntityLocation(null)
     setSelectedEntityId(id)
+  }
+
+  function selectEntityFromList(entity: Entity) {
+    selectEntity(entity.id)
+    const map = mapRef.current
+    map?.setView([entity.latitude, entity.longitude], Math.max(map.getZoom(), LIST_SELECT_ZOOM))
   }
 
   function openCreateForm(location: Location) {
@@ -36,7 +48,14 @@ export function App() {
         onSelectEntity={(entity) => selectEntity(entity.id)}
         onMapClick={openCreateForm}
       />
-      <EntityListState query={entities} />
+      <EntityListState query={entities} filtered={Boolean(filters.type || filters.status)} />
+      <EntityList
+        entities={entities.data ?? []}
+        filters={filters}
+        onFiltersChange={setFilters}
+        selectedEntityId={selectedEntityId}
+        onSelectEntity={selectEntityFromList}
+      />
       <MapLegend />
 
       <button

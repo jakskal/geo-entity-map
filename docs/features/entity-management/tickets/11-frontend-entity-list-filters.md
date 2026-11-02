@@ -8,13 +8,13 @@ Spec: `docs/features/entity-management/spec.md` — read it first; this ticket o
 
 **Blocked by:** 07 (Frontend — view Entity details)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Side list of Entities showing name, Entity Type and Status
-- [ ] Entity Type and Status filters held in UI state and passed to the list query, so filtering happens on the server
-- [ ] Map and list render the same query result
-- [ ] Count of Entities currently shown; "Clear filters" resets both filters
-- [ ] Clicking a row selects the Entity (opening its details) and moves the map to its Location
-- [ ] Layout works at narrow widths (list collapsible or stacked)
-- [ ] MSW list handler honours `type` and `status` query parameters
-- [ ] Tests: list shows Entities from the API; choosing a filter sends it to the API and updates list and count; clear filters restores the full list; clicking a row opens that Entity's details
+- [x] Side list of Entities showing name, Entity Type and Status
+- [x] Entity Type and Status filters held in UI state and passed to the list query, so filtering happens on the server
+- [x] Map and list render the same query result
+- [x] Count of Entities currently shown; "Clear filters" resets both filters
+- [x] Clicking a row selects the Entity (opening its details) and moves the map to its Location
+- [x] Layout works at narrow widths (list collapsible or stacked)
+- [x] MSW list handler honours `type` and `status` query parameters
+- [x] Tests: list shows Entities from the API; choosing a filter sends it to the API and updates list and count; clear filters restores the full list; clicking a row opens that Entity's details
