@@ -1,7 +1,7 @@
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '../test/server'
-import { ApiError, apiFetch } from './client'
+import { ApiError, apiFetch, generalMessage } from './client'
 
 describe('API client', () => {
   it('turns a 422 response into an ApiError with field errors and the request ID', async () => {
@@ -79,5 +79,39 @@ describe('API client', () => {
     server.use(http.delete('/api/entities/1', () => new HttpResponse(null, { status: 204 })))
 
     await expect(apiFetch('/entities/1', { method: 'DELETE' })).resolves.toBeUndefined()
+  })
+
+  it('gives up on a request the backend never answers and reports it as a general error', async () => {
+    server.use(
+      http.put('/api/entities/1', async () => {
+        await delay('infinite')
+        return HttpResponse.json({})
+      }),
+    )
+
+    const error = await apiFetch('/entities/1', { method: 'PUT', body: {}, timeoutMs: 50 }).catch(
+      (e: unknown) => e,
+    )
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ status: 0, code: 'timeout', requestId: undefined })
+    expect(generalMessage(error)).toBe('Something went wrong. Please try again.')
+  })
+
+  it('still lets the caller cancel a request', async () => {
+    server.use(
+      http.get('/api/entities', async () => {
+        await delay('infinite')
+        return HttpResponse.json([])
+      }),
+    )
+    const controller = new AbortController()
+
+    const pending = apiFetch('/entities', { signal: controller.signal }).catch((e: unknown) => e)
+    controller.abort()
+    const error = await pending
+
+    expect(error).not.toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ name: 'AbortError' })
   })
 })

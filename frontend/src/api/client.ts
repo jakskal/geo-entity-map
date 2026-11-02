@@ -4,10 +4,17 @@
 
 const API_BASE = '/api'
 
-/** Machine-readable error codes the backend returns in the `error` field. */
-export type ApiErrorCode = 'validation_failed' | 'bad_request' | 'not_found' | 'internal'
+/**
+ * Machine-readable error codes the backend returns in the `error` field, plus
+ * `timeout`, which the client sets itself when no response arrives in time.
+ */
+export type ApiErrorCode = 'validation_failed' | 'bad_request' | 'not_found' | 'internal' | 'timeout'
+
+/** How long a request may take before the client gives up (see docs/log.md). */
+export const REQUEST_TIMEOUT_MS = 10_000
 
 export class ApiError extends Error {
+  /** HTTP status, or 0 when no response arrived (timeout). */
   readonly status: number
   readonly code: ApiErrorCode
   /** Per-field reasons; filled only for 422 `validation_failed` responses. */
@@ -57,20 +64,33 @@ export type ApiRequest = {
   /** Sent as JSON. */
   body?: unknown
   signal?: AbortSignal
+  /** Give up after this many milliseconds; defaults to REQUEST_TIMEOUT_MS. */
+  timeoutMs?: number
 }
 
 /**
  * Calls `/api{path}` and returns the parsed JSON body (or `undefined` for 204).
- * Throws ApiError for any non-2xx response.
+ * Throws ApiError for any non-2xx response, or when no response arrives
+ * within the timeout. A cancel through the caller's `signal` still rejects
+ * with the usual AbortError, so TanStack Query can tell it apart.
  */
 export async function apiFetch<T>(path: string, request: ApiRequest = {}): Promise<T> {
-  const { method = 'GET', body, signal } = request
-  const response = await fetch(toUrl(`${API_BASE}${path}`), {
-    method,
-    signal,
-    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  const { method = 'GET', body, signal, timeoutMs = REQUEST_TIMEOUT_MS } = request
+  const timeout = AbortSignal.timeout(timeoutMs)
+  let response: Response
+  try {
+    response = await fetch(toUrl(`${API_BASE}${path}`), {
+      method,
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch (error) {
+    if (timeout.aborted) {
+      throw new ApiError({ status: 0, code: 'timeout', message: 'The request timed out' })
+    }
+    throw error
+  }
 
   if (!response.ok) {
     throw await toApiError(response)
