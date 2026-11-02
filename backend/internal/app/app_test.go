@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -49,6 +50,37 @@ func get(t *testing.T, url string, header http.Header) *http.Response {
 	}
 	t.Cleanup(func() { resp.Body.Close() })
 	return resp
+}
+
+// newServerWithLogs is newServer that also returns the buffer the request
+// logs are written to, so a test can check what was logged.
+func newServerWithLogs(t *testing.T) (*httptest.Server, *bytes.Buffer) {
+	t.Helper()
+	logs := &bytes.Buffer{}
+	logger := slog.New(slog.NewJSONHandler(logs, nil))
+	srv := httptest.NewServer(app.NewHandler(testdb.New(t), logger))
+	t.Cleanup(srv.Close)
+	return srv, logs
+}
+
+func TestSuccessfulHealthCheckIsNotLogged(t *testing.T) {
+	srv, logs := newServerWithLogs(t)
+
+	get(t, srv.URL+"/healthz", nil)
+
+	if logs.Len() != 0 {
+		t.Fatalf("expected no log lines for a successful /healthz, got:\n%s", logs.String())
+	}
+}
+
+func TestOtherRequestsAreStillLogged(t *testing.T) {
+	srv, logs := newServerWithLogs(t)
+
+	get(t, srv.URL+"/api/entities", nil)
+
+	if !strings.Contains(logs.String(), `"path":"/api/entities"`) {
+		t.Fatalf("expected a log line for /api/entities, got:\n%s", logs.String())
+	}
 }
 
 func TestHealthCheckReturns200(t *testing.T) {

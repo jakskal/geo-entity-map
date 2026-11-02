@@ -14,6 +14,9 @@ const RequestIDHeader = "X-Request-ID"
 
 const maxRequestIDLength = 128
 
+// healthCheckPath is the liveness endpoint Docker polls; see Middleware.
+const healthCheckPath = "/healthz"
+
 type contextKey int
 
 const (
@@ -37,7 +40,8 @@ func Logger(ctx context.Context) *slog.Logger {
 }
 
 // Middleware assigns a request ID to every request (reusing a valid incoming
-// one), sets it on the response, and logs one line per request.
+// one), sets it on the response, and logs one line per request — except
+// successful health checks.
 func Middleware(logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -54,6 +58,12 @@ func Middleware(logger *slog.Logger, next http.Handler) http.Handler {
 
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rec, r.WithContext(ctx))
+
+		// Docker polls /healthz every few seconds; logging each success would
+		// bury real requests. A failing health check is still logged.
+		if r.URL.Path == healthCheckPath && rec.status == http.StatusOK {
+			return
+		}
 
 		reqLogger.Info("request",
 			"method", r.Method,

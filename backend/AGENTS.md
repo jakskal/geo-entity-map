@@ -37,5 +37,5 @@ Environment: `DATABASE_URL` (required), `PORT` (default `8080`), `SEED` (`true`/
 ## Errors and logging
 
 - Every non-2xx response uses `httpx.WriteError`, producing `{"error", "message", "fields"?, "requestId"}`. Codes: `validation_failed` (422, with `fields`), `bad_request` (400), `not_found` (404, `httpx.NotFound`), `internal` (500, `httpx.InternalError` — logs the cause, returns a generic message).
-- `httpx.Middleware` sets `X-Request-ID` on every response (reuses a non-empty incoming value of at most 128 characters, else a new UUID) and logs one JSON line per request: `requestId`, `method`, `path`, `status`, `durationMs`.
+- `httpx.Middleware` sets `X-Request-ID` on every response (reuses a non-empty incoming value of at most 128 characters, else a new UUID) and logs one JSON line per request: `requestId`, `method`, `path`, `status`, `durationMs`. Successful `GET /healthz` (200) is not logged, because Docker polls it every few seconds; a failing health check is.
 - Log inside a request with `httpx.Logger(r.Context())` so the line carries the request ID.
