@@ -1,0 +1,20 @@
+# Test brief (not part of the submission)
+*.pdf
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Frontend
+node_modules/
+dist/
+
+# Backend
+/backend/bin/
+*.exe
