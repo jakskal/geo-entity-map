@@ -137,4 +137,4 @@ These are things only a real browser can check. Start the stack with `docker com
 - No end-to-end browser tests. Map gestures are covered by the manual checklist above.
 - No distributed tracing (the request ID covers this one backend), no internationalisation, no mobile-specific layout beyond basic responsiveness.
 
-**Unfinished at submission:** none of the specified features. The manual browser checklist above is to be run by the developer before merging to `main`.
+**Unfinished at submission:** none of the specified features. The manual browser checklist above was run by the developer before merging to `main`; all 12 items pass.

@@ -16,8 +16,8 @@ Check this first in every session; update it when a step finishes.
 - [x] Spec → `docs/features/entity-management/spec.md`
 - [x] Tickets → `docs/features/entity-management/tickets/` (12 tickets)
 - [x] Implementation → run `/implement-spec docs/features/entity-management/spec.md` (includes `/code-review`)
-- [ ] Ticket 12: integration check, README, merge to `main` (pending manual check + merge approval)
-- [ ] Submit by 2026-11-04 10:00 (target 2026-11-03 10:00) (pending manual check + merge approval)
+- [x] Ticket 12: integration check, README, merge to `main`
+- [ ] Submit by 2026-11-04 10:00 (target 2026-11-03 10:00) (developer sends the email)
 
 ## Commit convention
 
