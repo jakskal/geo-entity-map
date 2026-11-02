@@ -14,7 +14,7 @@ import (
 )
 
 // Image is the PostgreSQL image used by tests; keep it in step with Docker Compose.
-const Image = "postgres:18-alpine"
+const Image = "postgres:18.6-alpine3.24"
 
 var (
 	once     sync.Once

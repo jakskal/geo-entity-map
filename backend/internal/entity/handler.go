@@ -4,6 +4,7 @@ package entity
 
 import (
 	"errors"
+	"maps"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -62,20 +63,15 @@ func (h handler) list(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, entities)
 }
 
-// get answers GET /api/entities/{id}. A malformed id is treated as unknown.
+// get answers GET /api/entities/{id}.
 func (h handler) get(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		httpx.NotFound(w, r)
+	id, ok := pathID(w, r)
+	if !ok {
 		return
 	}
 	e, err := h.store.get(r.Context(), id)
-	if errors.Is(err, errNotFound) {
-		httpx.NotFound(w, r)
-		return
-	}
 	if err != nil {
-		httpx.InternalError(w, r, err)
+		writeStoreError(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, e)
@@ -96,11 +92,10 @@ func (h handler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 // update answers PUT /api/entities/{id}: a full replace of the writable
-// fields. A malformed id is treated as unknown.
+// fields.
 func (h handler) update(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		httpx.NotFound(w, r)
+	id, ok := pathID(w, r)
+	if !ok {
 		return
 	}
 	in, ok := readInput(w, r)
@@ -108,46 +103,59 @@ func (h handler) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	e, err := h.store.update(r.Context(), id, in)
-	if errors.Is(err, errNotFound) {
-		httpx.NotFound(w, r)
-		return
-	}
 	if err != nil {
-		httpx.InternalError(w, r, err)
+		writeStoreError(w, r, err)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, e)
 }
 
-// delete answers DELETE /api/entities/{id} with 204 and no body. A
-// malformed id is treated as unknown.
+// delete answers DELETE /api/entities/{id} with 204 and no body.
 func (h handler) delete(w http.ResponseWriter, r *http.Request) {
-	id, err := uuid.Parse(r.PathValue("id"))
-	if err != nil {
-		httpx.NotFound(w, r)
+	id, ok := pathID(w, r)
+	if !ok {
 		return
 	}
-	err = h.store.delete(r.Context(), id)
-	if errors.Is(err, errNotFound) {
-		httpx.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		httpx.InternalError(w, r, err)
+	if err := h.store.delete(r.Context(), id); err != nil {
+		writeStoreError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// pathID parses the {id} path value. A malformed id is treated as unknown:
+// it writes the 404 response and returns false.
+func pathID(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		httpx.NotFound(w, r)
+		return uuid.UUID{}, false
+	}
+	return id, true
+}
+
+// writeStoreError answers a failed store call: 404 for an unknown Entity,
+// 500 for anything else.
+func writeStoreError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, errNotFound) {
+		httpx.NotFound(w, r)
+		return
+	}
+	httpx.InternalError(w, r, err)
+}
+
 // readInput decodes and validates a write body. If it is unusable, it
 // writes the 400 or 422 response and returns false.
 func readInput(w http.ResponseWriter, r *http.Request) (Input, bool) {
-	req, err := decodeWriteRequest(w, r)
+	req, typeErrs, err := decodeWriteRequest(w, r)
 	if err != nil {
 		httpx.WriteError(w, r, http.StatusBadRequest, httpx.CodeBadRequest, err.Error(), nil)
 		return Input{}, false
 	}
-	if fields := req.validate(); len(fields) > 0 {
+	fields := req.validate()
+	// A wrong JSON type is the more precise reason for that field.
+	maps.Copy(fields, typeErrs)
+	if len(fields) > 0 {
 		httpx.WriteError(w, r, http.StatusUnprocessableEntity, httpx.CodeValidationFailed, "invalid Entity", fields)
 		return Input{}, false
 	}

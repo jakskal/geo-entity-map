@@ -123,15 +123,12 @@ func TestCreateEntityIgnoresIDAndTimestampsInBody(t *testing.T) {
 
 func TestWriteEntityRejectsUnreadableBodiesWith400(t *testing.T) {
 	cases := map[string]string{
-		"malformed JSON":            `{"name": "Truck 7",`,
-		"not JSON":                  `hello`,
-		"empty body":                ``,
-		"array instead of object":   `[]`,
-		"name is a number":          `{"name": 7, "type": "vehicle", "status": "active", "latitude": 1, "longitude": 1}`,
-		"latitude is a string":      `{"name": "a", "type": "vehicle", "status": "active", "latitude": "1", "longitude": 1}`,
-		"Attribute value is number": `{"name": "a", "type": "vehicle", "status": "active", "latitude": 1, "longitude": 1, "attributes": {"k": 1}}`,
-		"two JSON objects":          `{} {}`,
-		"body over 1 MB":            `{"name": "a", "description": "` + strings.Repeat("d", 1<<20) + `"}`,
+		"malformed JSON":          `{"name": "Truck 7",`,
+		"not JSON":                `hello`,
+		"empty body":              ``,
+		"array instead of object": `[]`,
+		"two JSON objects":        `{} {}`,
+		"body over 1 MB":          `{"name": "a", "description": "` + strings.Repeat("d", 1<<20) + `"}`,
 	}
 	for name, body := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -153,6 +150,52 @@ func TestWriteEntityRejectsUnreadableBodiesWith400(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestWriteEntityReportsWrongJSONTypesAs422PerField(t *testing.T) {
+	body := `{"name": 7, "type": true, "status": ["active"], "latitude": "1", "longitude": {},` +
+		` "description": 3, "attributes": {"plate": "D 1", "axles": 2}}`
+	want := map[string]string{
+		"name":        "must be a string",
+		"type":        "must be a string",
+		"status":      "must be a string",
+		"latitude":    "must be a number",
+		"longitude":   "must be a number",
+		"description": "must be a string",
+		"attributes":  "values must be strings",
+	}
+	srv := newServer(t)
+	id := givenEntity(t, srv, "Existing", "other", "active")
+
+	for _, req := range []struct{ method, path string }{
+		{http.MethodPost, "/api/entities"},
+		{http.MethodPut, "/api/entities/" + id},
+	} {
+		resp := send(t, req.method, srv.URL+req.path, []byte(body), http.Header{"X-Request-Id": {"trace-types"}})
+
+		if resp.StatusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("%s status = %d, want 422", req.method, resp.StatusCode)
+		}
+		got := decode[errorJSON](t, resp)
+		if got.Error != "validation_failed" || got.RequestID != "trace-types" || !reflect.DeepEqual(got.Fields, want) {
+			t.Errorf("%s body = %+v, want validation_failed with fields %v", req.method, got, want)
+		}
+	}
+}
+
+func TestWriteEntityReportsAttributesThatAreNotAnObjectAs422(t *testing.T) {
+	srv := newServer(t)
+	body := `{"name": "a", "type": "vehicle", "status": "active", "latitude": 1, "longitude": 1, "attributes": ["k"]}`
+
+	resp := send(t, http.MethodPost, srv.URL+"/api/entities", []byte(body), nil)
+
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want 422", resp.StatusCode)
+	}
+	got := decode[errorJSON](t, resp)
+	if len(got.Fields) != 1 || got.Fields["attributes"] != "must be an object" {
+		t.Errorf("fields = %v, want only attributes: must be an object", got.Fields)
 	}
 }
 
