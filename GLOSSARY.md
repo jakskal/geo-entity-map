@@ -9,7 +9,7 @@ A real-world object with a geographic position that the app tracks, such as a ve
 _Avoid_: Object, item, asset, marker
 
 **Entity Type**:
-The kind of real-world object an Entity represents (e.g. vehicle, IoT device, facility).
+The kind of real-world object an Entity represents, chosen from one fixed set: vehicle, IoT device, facility, other.
 _Avoid_: Category, kind, class
 
 **Status**:
