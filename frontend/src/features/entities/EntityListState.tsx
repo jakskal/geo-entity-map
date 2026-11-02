@@ -4,8 +4,17 @@ import type { Entity } from './entity'
 
 const NOTICE = 'absolute top-4 left-1/2 z-[1000] -translate-x-1/2 rounded bg-white px-4 py-2 shadow'
 
-/** Loading, error (with retry) and empty-state notices over the map. */
-export function EntityListState({ query }: { query: UseQueryResult<Entity[]> }) {
+/**
+ * Loading, error (with retry) and empty-state notices over the map. With
+ * filters active, an empty result is reported by the side list instead.
+ */
+export function EntityListState({
+  query,
+  filtered = false,
+}: {
+  query: UseQueryResult<Entity[]>
+  filtered?: boolean
+}) {
   if (query.isPending) {
     return (
       <p role="status" className={NOTICE}>
@@ -30,7 +39,7 @@ export function EntityListState({ query }: { query: UseQueryResult<Entity[]> }) 
     )
   }
 
-  if (query.data.length === 0) {
+  if (query.data.length === 0 && !filtered) {
     return (
       <p className={NOTICE}>No Entities yet. Click anywhere on the map to create the first one.</p>
     )

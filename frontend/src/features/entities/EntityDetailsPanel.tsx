@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from 'react'
 import { ApiError } from '../../api/client'
 import { useEntity } from '../../api/entities'
+import { DeleteEntityButton } from './DeleteEntityButton'
 import { EditEntityPanel } from './EditEntityPanel'
 import { ENTITY_TYPE_LABELS, STATUS_LABELS, type Entity } from './entity'
 
@@ -60,6 +61,8 @@ export function EntityDetailsPanel({ entityId, onClose }: { entityId: string; on
           >
             Edit
           </button>
+          {/* Deleting closes the panel, which clears the selection. */}
+          <DeleteEntityButton entity={entity.data} onDeleted={onClose} />
         </div>
       )}
     </section>
