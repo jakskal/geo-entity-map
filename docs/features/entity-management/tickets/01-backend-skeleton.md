@@ -8,18 +8,18 @@ Spec: `docs/features/entity-management/spec.md` — read it first; this ticket o
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Go module on Go 1.27; package layout by feature as in the spec (program entry point, Entity module, database module)
-- [ ] Configuration from environment variables: database URL, port, seed on/off; clear error and exit if the database URL is missing
-- [ ] Connects to PostgreSQL with pgx; graceful shutdown on interrupt/terminate
-- [ ] goose migrations embedded in the binary and run on startup; the first migration creates the Entities table with the spec's columns, UUID primary key, JSONB Attributes, and CHECK constraints on Entity Type, Status, latitude and longitude ranges
-- [ ] sqlc configured to generate query code from plain SQL (at least one query, e.g. a count, to prove the setup works)
-- [ ] `GET /healthz` returns 200
-- [ ] Request middleware: reuses a non-empty incoming `X-Request-ID` of at most 128 characters, otherwise generates a UUID; always sets it on the response; logs one `log/slog` JSON line per request with request ID, method, path, status, duration
-- [ ] A shared JSON error response helper producing the spec's error body (`error`, `message`, optional `fields`, `requestId`); unknown routes return 404 in that shape
-- [ ] Test harness: starts PostgreSQL with testcontainers-go, applies migrations, and gives each test a clean Entities table; tests call the real HTTP handler
-- [ ] Tests: health check 200; `X-Request-ID` generated when absent, echoed when sent, replaced when over 128 characters; unknown route returns 404 error body including `requestId`
-- [ ] Multi-stage Dockerfile producing a small image that runs the server
-- [ ] `backend/AGENTS.md` (layout, commands for run/test/sqlc/migrations, conventions, error format) and `backend/CLAUDE.md` containing only `@AGENTS.md` plus the do-not-edit note
-- [ ] One test command runs the whole backend suite (requires Docker)
+- [x] Go module on Go 1.27; package layout by feature as in the spec (program entry point, Entity module, database module)
+- [x] Configuration from environment variables: database URL, port, seed on/off; clear error and exit if the database URL is missing
+- [x] Connects to PostgreSQL with pgx; graceful shutdown on interrupt/terminate
+- [x] goose migrations embedded in the binary and run on startup; the first migration creates the Entities table with the spec's columns, UUID primary key, JSONB Attributes, and CHECK constraints on Entity Type, Status, latitude and longitude ranges
+- [x] sqlc configured to generate query code from plain SQL (at least one query, e.g. a count, to prove the setup works)
+- [x] `GET /healthz` returns 200
+- [x] Request middleware: reuses a non-empty incoming `X-Request-ID` of at most 128 characters, otherwise generates a UUID; always sets it on the response; logs one `log/slog` JSON line per request with request ID, method, path, status, duration
+- [x] A shared JSON error response helper producing the spec's error body (`error`, `message`, optional `fields`, `requestId`); unknown routes return 404 in that shape
+- [x] Test harness: starts PostgreSQL with testcontainers-go, applies migrations, and gives each test a clean Entities table; tests call the real HTTP handler
+- [x] Tests: health check 200; `X-Request-ID` generated when absent, echoed when sent, replaced when over 128 characters; unknown route returns 404 error body including `requestId`
+- [x] Multi-stage Dockerfile producing a small image that runs the server
+- [x] `backend/AGENTS.md` (layout, commands for run/test/sqlc/migrations, conventions, error format) and `backend/CLAUDE.md` containing only `@AGENTS.md` plus the do-not-edit note
+- [x] One test command runs the whole backend suite (requires Docker)

@@ -1,0 +1,58 @@
+# Whole stack: PostgreSQL + Go backend + React frontend (nginx).
+# Run from the repo root: docker compose up --build
+# Open http://localhost:3000 (or FRONTEND_PORT). Every variable has a default,
+# so no .env file is needed; see .env.example to override.
+
+name: geo-entity-map
+
+services:
+  db:
+    image: postgres:18.6-alpine3.24
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-entities}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-entities}
+      POSTGRES_DB: ${POSTGRES_DB:-entities}
+    volumes:
+      # Postgres 18 images keep data under /var/lib/postgresql/<major>/,
+      # so the volume is mounted one level up.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    build: ./backend
+    # Docker waits this long for a graceful stop before killing. The Go server
+    # shuts down well within it; the default 10s only adds waiting on hosts
+    # where the stop signal is not delivered.
+    stop_grace_period: 3s
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-entities}:${POSTGRES_PASSWORD:-entities}@db:5432/${POSTGRES_DB:-entities}?sslmode=disable
+      PORT: "8080"
+      SEED: ${SEED:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine base image.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/healthz"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  frontend:
+    build: ./frontend
+    stop_grace_period: 3s
+    environment:
+      # nginx forwards /api/ here; the service name "backend" resolves on the Compose network.
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db-data:

@@ -1,0 +1,50 @@
+import type { UseQueryResult } from '@tanstack/react-query'
+import { requestIdSuffix } from '../../api/client'
+import type { Entity } from './entity'
+
+const NOTICE = 'max-w-full rounded bg-white px-4 py-2 shadow'
+
+/**
+ * Loading, error (with retry) and empty-state notices, placed by the caller
+ * in the map's notice region. With filters active, an empty result is
+ * reported by the side list instead.
+ */
+export function EntityLoadNotice({
+  query,
+  filtered = false,
+}: {
+  query: UseQueryResult<Entity[]>
+  filtered?: boolean
+}) {
+  if (query.isPending) {
+    return (
+      <p role="status" className={NOTICE}>
+        Loading Entities…
+      </p>
+    )
+  }
+
+  if (query.isError) {
+    return (
+      <div role="alert" className={`${NOTICE} flex items-center gap-3 text-red-700`}>
+        <span>Could not load Entities{requestIdSuffix(query.error)}</span>
+        <button
+          type="button"
+          onClick={() => query.refetch()}
+          disabled={query.isFetching}
+          className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-700 disabled:opacity-50"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
+  if (query.data.length === 0 && !filtered) {
+    return (
+      <p className={NOTICE}>No Entities yet. Click anywhere on the map to create the first one.</p>
+    )
+  }
+
+  return null
+}

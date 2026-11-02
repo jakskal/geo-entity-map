@@ -15,9 +15,9 @@ Check this first in every session; update it when a step finishes.
 - [x] Grilling → `GLOSSARY.md`, `docs/log.md`
 - [x] Spec → `docs/features/entity-management/spec.md`
 - [x] Tickets → `docs/features/entity-management/tickets/` (12 tickets)
-- [ ] Implementation → run `/implement-spec docs/features/entity-management/spec.md` (includes `/code-review`)
-- [ ] Ticket 12: integration check, README, merge to `main`
-- [ ] Submit by 2026-11-04 10:00 (target 2026-11-03 10:00)
+- [x] Implementation → run `/implement-spec docs/features/entity-management/spec.md` (includes `/code-review`)
+- [x] Ticket 12: integration check, README, merge to `main`
+- [ ] Submit by 2026-11-04 10:00 (target 2026-11-03 10:00) (developer sends the email)
 
 ## Commit convention
 
