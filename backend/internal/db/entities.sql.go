@@ -7,6 +7,9 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countEntities = `-- name: CountEntities :one
@@ -18,4 +21,112 @@ func (q *Queries) CountEntities(ctx context.Context) (int64, error) {
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const createEntity = `-- name: CreateEntity :one
+INSERT INTO entities (name, type, status, latitude, longitude, description, attributes)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, name, type, status, latitude, longitude, description, attributes, created_at, updated_at
+`
+
+type CreateEntityParams struct {
+	Name        string
+	Type        string
+	Status      string
+	Latitude    float64
+	Longitude   float64
+	Description string
+	Attributes  []byte
+}
+
+func (q *Queries) CreateEntity(ctx context.Context, arg CreateEntityParams) (Entity, error) {
+	row := q.db.QueryRow(ctx, createEntity,
+		arg.Name,
+		arg.Type,
+		arg.Status,
+		arg.Latitude,
+		arg.Longitude,
+		arg.Description,
+		arg.Attributes,
+	)
+	var i Entity
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Type,
+		&i.Status,
+		&i.Latitude,
+		&i.Longitude,
+		&i.Description,
+		&i.Attributes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getEntity = `-- name: GetEntity :one
+SELECT id, name, type, status, latitude, longitude, description, attributes, created_at, updated_at FROM entities WHERE id = $1
+`
+
+func (q *Queries) GetEntity(ctx context.Context, id uuid.UUID) (Entity, error) {
+	row := q.db.QueryRow(ctx, getEntity, id)
+	var i Entity
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Type,
+		&i.Status,
+		&i.Latitude,
+		&i.Longitude,
+		&i.Description,
+		&i.Attributes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listEntities = `-- name: ListEntities :many
+SELECT id, name, type, status, latitude, longitude, description, attributes, created_at, updated_at FROM entities
+WHERE ($1::text IS NULL OR type = $1::text)
+  AND ($2::text IS NULL OR status = $2::text)
+ORDER BY name, id
+`
+
+type ListEntitiesParams struct {
+	Type   pgtype.Text
+	Status pgtype.Text
+}
+
+// A NULL filter matches every Entity.
+func (q *Queries) ListEntities(ctx context.Context, arg ListEntitiesParams) ([]Entity, error) {
+	rows, err := q.db.Query(ctx, listEntities, arg.Type, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Entity{}
+	for rows.Next() {
+		var i Entity
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Type,
+			&i.Status,
+			&i.Latitude,
+			&i.Longitude,
+			&i.Description,
+			&i.Attributes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

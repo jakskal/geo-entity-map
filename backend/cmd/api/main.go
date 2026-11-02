@@ -17,13 +17,14 @@ import (
 
 	"github.com/jakskal/geo-entity-map/backend/internal/app"
 	"github.com/jakskal/geo-entity-map/backend/internal/db"
+	"github.com/jakskal/geo-entity-map/backend/internal/entity"
 )
 
 // config is read from environment variables.
 type config struct {
 	DatabaseURL string // DATABASE_URL, required
 	Port        string // PORT, default 8080
-	Seed        bool   // SEED, default false; read by the seeding added in ticket 04
+	Seed        bool   // SEED, default false; loads sample Entities into an empty table
 }
 
 func loadConfig() (config, error) {
@@ -78,6 +79,12 @@ func run(logger *slog.Logger) error {
 
 	if err := db.Migrate(ctx, pool); err != nil {
 		return err
+	}
+
+	if cfg.Seed {
+		if err := entity.Seed(ctx, pool); err != nil {
+			return err
+		}
 	}
 
 	srv := &http.Server{

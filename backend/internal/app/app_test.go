@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/jakskal/geo-entity-map/backend/internal/app"
 	"github.com/jakskal/geo-entity-map/backend/internal/testdb"
@@ -18,11 +19,19 @@ import (
 // newServer starts the real application handler against a clean Entities table.
 func newServer(t *testing.T) *httptest.Server {
 	t.Helper()
+	srv, _ := newServerWithPool(t)
+	return srv
+}
+
+// newServerWithPool is newServer that also returns the pool, so a test can
+// arrange data before calling the API.
+func newServerWithPool(t *testing.T) (*httptest.Server, *pgxpool.Pool) {
+	t.Helper()
 	pool := testdb.New(t)
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	srv := httptest.NewServer(app.NewHandler(pool, logger))
 	t.Cleanup(srv.Close)
-	return srv
+	return srv, pool
 }
 
 func get(t *testing.T, url string, header http.Header) *http.Response {
