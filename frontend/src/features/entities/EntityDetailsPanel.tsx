@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { ApiError } from '../../api/client'
 import { useEntity } from '../../api/entities'
+import { DeleteEntityButton } from './DeleteEntityButton'
 import { ENTITY_TYPE_LABELS, STATUS_LABELS, type Entity } from './entity'
 
 const timestampFormat = new Intl.DateTimeFormat(undefined, {
@@ -45,7 +46,10 @@ export function EntityDetailsPanel({ entityId, onClose }: { entityId: string; on
 
       {/* Actions for the shown Entity: Edit (ticket 09) and Delete (ticket 10) go here. */}
       {entity.data && (
-        <div role="group" aria-label="Actions" className="flex gap-2 border-t p-4" />
+        <div role="group" aria-label="Actions" className="flex gap-2 border-t p-4">
+          {/* Deleting closes the panel, which clears the selection. */}
+          <DeleteEntityButton entity={entity.data} onDeleted={onClose} />
+        </div>
       )}
     </section>
   )

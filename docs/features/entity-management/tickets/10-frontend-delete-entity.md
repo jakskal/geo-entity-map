@@ -8,11 +8,11 @@ Spec: `docs/features/entity-management/spec.md` — read it first; this ticket o
 
 **Blocked by:** 07 (Frontend — view Entity details)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] "Delete" action in the details panel opens an in-app confirmation dialog (not the browser's `confirm()`) naming the Entity
-- [ ] Confirming sends DELETE; on success the Entity is removed from the list cache, the selection is cleared and the panel closes
-- [ ] Cancelling the dialog does nothing
-- [ ] A failure shows an error with the request ID and keeps the Entity
-- [ ] MSW handler for delete, reusable by later tickets
-- [ ] Tests: confirm deletes and the Entity is gone from the list data; cancel keeps it; server error shows the message with the request ID
+- [x] "Delete" action in the details panel opens an in-app confirmation dialog (not the browser's `confirm()`) naming the Entity
+- [x] Confirming sends DELETE; on success the Entity is removed from the list cache, the selection is cleared and the panel closes
+- [x] Cancelling the dialog does nothing
+- [x] A failure shows an error with the request ID and keeps the Entity
+- [x] MSW handler for delete, reusable by later tickets
+- [x] Tests: confirm deletes and the Entity is gone from the list data; cancel keeps it; server error shows the message with the request ID

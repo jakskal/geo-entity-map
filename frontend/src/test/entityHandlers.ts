@@ -110,6 +110,25 @@ export function createEntityErrorHandler(error: Parameters<typeof entityErrorRes
   return http.post(LIST_URL, () => entityErrorResponse(error))
 }
 
+/**
+ * DELETE /api/entities/:id answering 204 and removing the Entity from the
+ * given array, like the backend; 404 for any other id. Pass the same array to
+ * `listEntitiesHandler` so later list requests no longer include it.
+ */
+export function deleteEntityHandler(store: Entity[]) {
+  return http.delete(ONE_URL, ({ params }) => {
+    const index = store.findIndex((candidate) => candidate.id === params.id)
+    if (index === -1) return notFoundResponse('req-delete-404')
+    store.splice(index, 1)
+    return new HttpResponse(null, { status: 204 })
+  })
+}
+
+/** DELETE /api/entities/:id failing with the given error (see entityErrorResponse). */
+export function deleteEntityErrorHandler(error: Parameters<typeof entityErrorResponse>[0]) {
+  return http.delete(ONE_URL, () => entityErrorResponse(error))
+}
+
 /** GET /api/entities that never answers, to observe the loading state. */
 export function listEntitiesPendingHandler() {
   return http.get(LIST_URL, async () => {

@@ -49,6 +49,26 @@ export function useCreateEntity() {
   })
 }
 
+/**
+ * Deletes an Entity by id. On success it is removed from every cached list
+ * (so its marker disappears at once) and its cached details are dropped, then
+ * the lists are refetched in the background so the server's data wins.
+ */
+export function useDeleteEntity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<void>(`/entities/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    onSuccess: (_, id) => {
+      queryClient.setQueriesData<Entity[]>({ queryKey: entityKeys.lists() }, (entities) =>
+        entities?.filter((entity) => entity.id !== id),
+      )
+      queryClient.removeQueries({ queryKey: entityKeys.detail(id) })
+      void queryClient.invalidateQueries({ queryKey: entityKeys.lists() })
+    },
+  })
+}
+
 function matchesFilters(entity: Entity, filters: EntityFilters): boolean {
   return (
     (!filters.type || entity.type === filters.type) &&
