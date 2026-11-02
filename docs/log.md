@@ -25,8 +25,12 @@
 | 21 | Frontend stack | Vite + TanStack Query + react-hook-form + zod + Tailwind; UI state in `useState` | All state is server data | Redux/Zustand, Formik, MUI/shadcn |
 | 22 | Frontend layout | `src/api`, `src/features/entities`, `src/components` | By feature, mirrors backend | Layer-by-type folders |
 | 23 | Versions | Latest stable, pinned exactly: Go 1.27.3, Node 26.13.0 LTS, React 19.3.1, TypeScript 7.0.2, Vite 8.3.5, Tailwind 4.3.3, sqlc 1.31.1, goose 3.29.0 | Fresh project; older versions add nothing; Go only supports the two newest releases | Go 1.22/1.23 (out of support) |
+| 24 | Issue tracker | Local markdown in `docs/features/<feature>/` (`spec.md` + `tickets/NN-slug.md` with `Area:` line); one feature: `entity-management` | Plan lives next to the code and shows in commit history | GitHub Issues, `.scratch/` |
+| 25 | Docs layout | Cross-cutting docs at root `docs/`; area docs in `backend/docs/`, `frontend/docs/`; one root glossary | Each side gets its own context; one domain = one glossary | All docs in one folder, per-area glossaries |
+| 26 | Agent instructions | `AGENTS.md` holds content at root, `backend/`, `frontend/`; each `CLAUDE.md` is only `@AGENTS.md` | Works for Claude Code and other tools with one source of truth | CLAUDE.md only, symlinks (break on Windows), duplicated content |
 
 ## Process
 
 - 2026-11-02 — Repo created (`jakskal/geo-entity-map`, public). Grilling round 1 (/grill-with-docs): 13 decisions settled, all on the AI's recommendation; developer confirmed PostgreSQL over SQLite.
 - 2026-11-02 — Grilling round 2: 9 decisions settled. Developer questioned "Go 1.22" → clarified it named the stdlib routing feature, switched to latest Go 1.27 and dropped chi for the stdlib router. Toolchain installed via gvm/nvm.
+- 2026-11-02 — Skills setup (/setup-matt-pocock-skills): developer chose per-area docs, feature folders, and AGENTS.md + CLAUDE.md import so other AI tools can use the instructions.
