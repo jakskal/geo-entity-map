@@ -15,6 +15,10 @@ Specs and tickets for this repo live as markdown files in `docs/features/`.
 
 Create a new file under `docs/features/<feature-slug>/` (creating the directory if needed).
 
+## When a skill says "close" or "resolve" a ticket
+
+Set its `Status:` line to `done` and tick its acceptance criteria. The file stays in place as a record.
+
 ## When a skill says "fetch the relevant ticket"
 
 Read the file at the referenced path. The user will normally pass the path or the ticket number directly.

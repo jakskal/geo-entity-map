@@ -30,6 +30,8 @@
 | 26 | Agent instructions | `AGENTS.md` holds content at root, `backend/`, `frontend/`; each `CLAUDE.md` is only `@AGENTS.md` | Works for Claude Code and other tools with one source of truth | CLAUDE.md only, symlinks (break on Windows), duplicated content |
 | 27 | Test seam | One seam: the HTTP API contract. Backend tested through HTTP against real PostgreSQL (testcontainers-go), no mocks; frontend tested with Vitest + Testing Library against MSW fake API; map gestures checked manually | Tests prove real behaviour incl. SQL; survive refactors; no mock interfaces to explain | Layer-by-layer unit tests with mocks, E2E |
 | 28 | Request tracing | `X-Request-ID` (reuse incoming or generate UUID), returned in header + error body, in every `log/slog` JSON log line; shown in frontend error messages | Cheap way to trace one request through logs; pairs with generic 500 messages | Client header like `X-Client: iot-fe` (forgeable, false security without auth), OpenTelemetry (overkill) |
+| 29 | Ticket breakdown | 12 tickets in separate backend and frontend lanes, built in parallel against the spec's API contract (frontend uses MSW), plus a final integration ticket | Lets subagents work in parallel via /implement-spec; MSW removes the frontend's need for the real backend | 8 full vertical slices (less parallelism) |
+| 30 | Workflow guards | Workflow checklist in root `AGENTS.md`; ticket 12 requires code review done; commit convention for parallel work and merge fixes | Don't forget /implement-spec or /code-review; `git log` tells the parallel-build story | Relying on memory |
 
 ## Process
 
@@ -37,3 +39,4 @@
 - 2026-11-02 — Grilling round 2: 9 decisions settled. Developer questioned "Go 1.22" → clarified it named the stdlib routing feature, switched to latest Go 1.27 and dropped chi for the stdlib router. Toolchain installed via gvm/nvm.
 - 2026-11-02 — Skills setup (/setup-matt-pocock-skills): developer chose per-area docs, feature folders, and AGENTS.md + CLAUDE.md import so other AI tools can use the instructions.
 - 2026-11-02 — Spec (/to-spec): `docs/features/entity-management/spec.md`, 71 user stories. Developer asked what a seam is and whether it meant mocking → agreed on one HTTP seam with no backend mocks. Developer proposed an `X-Client: iot-fe` header → AI advised against (forgeable without auth); developer chose to add `X-Request-ID` tracing instead.
+- 2026-11-02 — Tickets (/to-tickets): AI proposed 8 vertical slices; developer chose to split backend/frontend into parallel lanes for subagents (12 tickets) and asked for guards against skipping steps plus a clear commit convention.
