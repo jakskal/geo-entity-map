@@ -45,6 +45,27 @@ describe('Delete an Entity', () => {
     expect(screen.queryByRole('button', { name: 'Water Pump' })).not.toBeInTheDocument()
   })
 
+  it('an Entity already deleted elsewhere (404) is treated as deleted: the details close and it leaves the list data', async () => {
+    const waterPump = makeEntity({ name: 'Water Pump' })
+    const deliveryVan = makeEntity({ name: 'Delivery Van 1' })
+    const store: Entity[] = [waterPump, deliveryVan]
+    const { queryClient } = renderApp({
+      handlers: [listEntitiesHandler(store), getEntityHandler(store), deleteEntityHandler(store)],
+    })
+    const { user, dialog } = await openDeleteDialog('Water Pump')
+    // Another operator deletes it first, so this DELETE answers 404.
+    store.splice(store.indexOf(waterPump), 1)
+
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Water Pump' })).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(queryClient.getQueryData<Entity[]>(entityKeys.list({}))).toEqual([deliveryVan])
+    expect(screen.queryByRole('button', { name: 'Water Pump' })).not.toBeInTheDocument()
+  })
+
   it('cancelling the confirmation keeps the Entity and its details', async () => {
     const waterPump = makeEntity({ name: 'Water Pump' })
     const store: Entity[] = [waterPump]

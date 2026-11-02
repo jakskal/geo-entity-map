@@ -1,6 +1,12 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query'
 import type { Entity, EntityFilters, EntityInput } from '../features/entities/entity'
-import { apiFetch } from './client'
+import { ApiError, apiFetch } from './client'
 
 /** Query keys for Entity data; mutations use these to update the cache. */
 export const entityKeys = {
@@ -40,10 +46,8 @@ export function useCreateEntity() {
     mutationFn: (input: EntityInput) =>
       apiFetch<Entity>('/entities', { method: 'POST', body: input }),
     onSuccess: (created) => {
-      const lists = queryClient.getQueriesData<Entity[]>({ queryKey: entityKeys.lists() })
-      for (const [queryKey, entities] of lists) {
-        const filters = (queryKey[2] ?? {}) as EntityFilters
-        if (entities && matchesFilters(created, filters)) {
+      for (const { queryKey, entities, filters } of cachedLists(queryClient)) {
+        if (matchesFilters(created, filters)) {
           queryClient.setQueryData(queryKey, [...entities, created])
         }
       }
@@ -65,10 +69,7 @@ export function useUpdateEntity() {
       apiFetch<Entity>(`/entities/${encodeURIComponent(id)}`, { method: 'PUT', body: input }),
     onSuccess: (updated) => {
       queryClient.setQueryData(entityKeys.detail(updated.id), updated)
-      const lists = queryClient.getQueriesData<Entity[]>({ queryKey: entityKeys.lists() })
-      for (const [queryKey, entities] of lists) {
-        if (!entities) continue
-        const filters = (queryKey[2] ?? {}) as EntityFilters
+      for (const { queryKey, entities, filters } of cachedLists(queryClient)) {
         const others = entities.filter((entity) => entity.id !== updated.id)
         const wasListed = others.length < entities.length
         let next = others
@@ -86,15 +87,23 @@ export function useUpdateEntity() {
 }
 
 /**
- * Deletes an Entity by id. On success it is removed from every cached list
- * (so its marker disappears at once) and its cached details are dropped, then
- * the lists are refetched in the background so the server's data wins.
+ * Deletes an Entity by id; a 404 counts as success, since it is already gone.
+ * On success it is removed from every cached list (so its marker disappears
+ * at once) and its cached details are dropped, then the lists are refetched
+ * in the background so the server's data wins.
  */
 export function useDeleteEntity() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) =>
-      apiFetch<void>(`/entities/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    mutationFn: async (id: string) => {
+      try {
+        await apiFetch<void>(`/entities/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      } catch (error) {
+        // A 404 means it is already gone (e.g. deleted by another operator):
+        // the outcome the operator asked for, so treat it as success.
+        if (!(error instanceof ApiError && error.status === 404)) throw error
+      }
+    },
     onSuccess: (_, id) => {
       queryClient.setQueriesData<Entity[]>({ queryKey: entityKeys.lists() }, (entities) =>
         entities?.filter((entity) => entity.id !== id),
@@ -103,6 +112,15 @@ export function useDeleteEntity() {
       void queryClient.invalidateQueries({ queryKey: entityKeys.lists() })
     },
   })
+}
+
+/** Every cached Entity list that holds data, with the filters it was fetched with. */
+function cachedLists(queryClient: QueryClient) {
+  return queryClient
+    .getQueriesData<Entity[]>({ queryKey: entityKeys.lists() })
+    .flatMap(([queryKey, entities]) =>
+      entities ? [{ queryKey, entities, filters: (queryKey[2] ?? {}) as EntityFilters }] : [],
+    )
 }
 
 function matchesFilters(entity: Entity, filters: EntityFilters): boolean {

@@ -1,5 +1,4 @@
-import { ApiError } from '../../api/client'
-import { generalMessage } from './EntityForm'
+import { ApiError, generalMessage, requestIdSuffix } from '../../api/client'
 
 /** Notice that a dragged marker's new Location was not saved (the marker is already back). */
 export function MoveEntityError({
@@ -13,7 +12,7 @@ export function MoveEntityError({
 }) {
   const reason =
     error instanceof ApiError && error.status === 422 && Object.keys(error.fields).length > 0
-      ? `${Object.values(error.fields).join('; ')} (request id: ${error.requestId ?? 'unknown'})`
+      ? `${Object.values(error.fields).join('; ')}${requestIdSuffix(error)}`
       : generalMessage(error)
 
   return (

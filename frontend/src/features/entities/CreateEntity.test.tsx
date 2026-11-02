@@ -119,13 +119,69 @@ describe('Create Entity', () => {
       )
       expect(store).toHaveLength(0)
     })
+
+    it('reports a duplicate Attribute name instead of silently dropping one', async () => {
+      const store: Entity[] = []
+      renderApp({ handlers: [listEntitiesHandler([]), createEntityHandler(store)] })
+      const { user } = await openCreateForm()
+      await fillValidEntity(user)
+
+      await addAttribute(user, 'plate', 'B 1234 XY')
+      await addAttribute(user, 'plate', 'D 5678 ZZ')
+      await user.click(screen.getByRole('button', { name: 'Save' }))
+
+      expect(screen.getByLabelText('Attribute 2 name')).toHaveAccessibleDescription(
+        'Duplicate Attribute name',
+      )
+      expect(screen.getByRole('form', { name: 'New Entity' })).toBeInTheDocument()
+      expect(store).toHaveLength(0)
+    })
+  })
+
+  describe('counts lengths in characters like the backend, so an emoji counts once', () => {
+    // '📍' is one character but two UTF-16 code units.
+    const pin = '📍'
+
+    async function paste(user: UserEvent, label: string, text: string) {
+      await user.click(screen.getByLabelText(label))
+      await user.paste(text)
+    }
+
+    it('saves an Entity with every text field at its limit in emoji', async () => {
+      const store: Entity[] = []
+      renderApp({ handlers: [listEntitiesHandler(store), createEntityHandler(store)] })
+      const { user } = await openCreateForm()
+      await fillValidEntity(user, pin.repeat(100))
+      await paste(user, 'Description', pin.repeat(500))
+      await user.click(screen.getByRole('button', { name: 'Add Attribute' }))
+      await paste(user, 'Attribute 1 name', pin.repeat(50))
+      await paste(user, 'Attribute 1 value', pin.repeat(200))
+
+      await user.click(screen.getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(store).toHaveLength(1))
+      expect(store[0].name).toBe(pin.repeat(100))
+      expect(store[0].attributes).toEqual({ [pin.repeat(50)]: pin.repeat(200) })
+    })
+
+    it('reports a name of 101 emoji', async () => {
+      const store: Entity[] = []
+      renderApp({ handlers: [listEntitiesHandler([]), createEntityHandler(store)] })
+      const { user } = await openCreateForm()
+      await fillValidEntity(user, pin.repeat(101))
+
+      await user.click(screen.getByRole('button', { name: 'Save' }))
+
+      expect(screen.getByLabelText('Name')).toHaveAccessibleDescription(
+        'Name must be at most 100 characters',
+      )
+      expect(store).toHaveLength(0)
+    })
   })
 
   it('saves a valid Entity: the form closes and the new Entity is in the list data', async () => {
     const store: Entity[] = []
-    const { queryClient } = renderApp({
-      handlers: [listEntitiesHandler(store), createEntityHandler(store)],
-    })
+    const { queryClient } = renderApp({ handlers: [listEntitiesHandler(store), createEntityHandler(store)] })
     const { user } = await openCreateForm()
     await fillValidEntity(user, '  Pump Station  ')
     await user.type(screen.getByLabelText('Description'), 'North intake')

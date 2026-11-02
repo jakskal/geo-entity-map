@@ -4,13 +4,14 @@ import { useEntities, useUpdateEntity } from './api/entities'
 import { CreateEntityPanel } from './features/entities/CreateEntityPanel'
 import {
   entityToInput,
+  hasActiveFilters,
   type Entity,
   type EntityFilters,
   type Location,
 } from './features/entities/entity'
 import { EntityDetailsPanel } from './features/entities/EntityDetailsPanel'
 import { EntityList } from './features/entities/EntityList'
-import { EntityListState } from './features/entities/EntityListState'
+import { EntityLoadNotice } from './features/entities/EntityLoadNotice'
 import { EntityMap, toLocation } from './features/entities/EntityMap'
 import { MapLegend } from './features/entities/MapLegend'
 import { MoveEntityError } from './features/entities/MoveEntityError'
@@ -66,7 +67,7 @@ export function App() {
           onDismiss={moveEntity.reset}
         />
       )}
-      <EntityListState query={entities} filtered={Boolean(filters.type || filters.status)} />
+      <EntityLoadNotice query={entities} filtered={hasActiveFilters(filters)} />
       <EntityList
         entities={entities.data ?? []}
         filters={filters}

@@ -1,4 +1,5 @@
 import { useUpdateEntity } from '../../api/entities'
+import { SidePanel } from '../../components/SidePanel'
 import type { Entity } from './entity'
 import { EntityForm } from './EntityForm'
 
@@ -7,7 +8,7 @@ export function EditEntityPanel({ entity, onClose }: { entity: Entity; onClose: 
   const updateEntity = useUpdateEntity()
 
   return (
-    <aside className="absolute top-4 right-4 z-[1000] max-h-[calc(100%-2rem)] w-96 overflow-y-auto rounded bg-white p-4 shadow-lg">
+    <SidePanel className="w-96 overflow-y-auto p-4">
       <EntityForm
         title="Edit Entity"
         initialValues={{
@@ -28,6 +29,6 @@ export function EditEntityPanel({ entity, onClose }: { entity: Entity; onClose: 
         }}
         onCancel={onClose}
       />
-    </aside>
+    </SidePanel>
   )
 }

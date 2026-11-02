@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from 'react'
-import { ApiError } from '../../api/client'
+import { ApiError, requestIdSuffix } from '../../api/client'
 import { useEntity } from '../../api/entities'
+import { SidePanel } from '../../components/SidePanel'
 import { DeleteEntityButton } from './DeleteEntityButton'
 import { EditEntityPanel } from './EditEntityPanel'
 import { ENTITY_TYPE_LABELS, STATUS_LABELS, type Entity } from './entity'
@@ -27,10 +28,7 @@ export function EntityDetailsPanel({ entityId, onClose }: { entityId: string; on
   }
 
   return (
-    <section
-      aria-labelledby={titleId}
-      className="absolute top-4 right-4 z-[1000] flex max-h-[calc(100%-2rem)] w-80 flex-col rounded bg-white text-sm shadow-lg"
-    >
+    <SidePanel aria-labelledby={titleId} className="flex w-80 flex-col text-sm">
       <header className="flex items-start justify-between gap-2 border-b p-4">
         <h2 id={titleId} className="text-base font-semibold break-words">
           {entity.data?.name ?? 'Entity details'}
@@ -51,7 +49,6 @@ export function EntityDetailsPanel({ entityId, onClose }: { entityId: string; on
         {entity.data && <EntityFields entity={entity.data} />}
       </div>
 
-      {/* Actions for the shown Entity: Edit (ticket 09) and Delete (ticket 10) go here. */}
       {entity.data && (
         <div role="group" aria-label="Actions" className="flex gap-2 border-t p-4">
           <button
@@ -65,7 +62,7 @@ export function EntityDetailsPanel({ entityId, onClose }: { entityId: string; on
           <DeleteEntityButton entity={entity.data} onDeleted={onClose} />
         </div>
       )}
-    </section>
+    </SidePanel>
   )
 }
 
@@ -73,10 +70,9 @@ function DetailsError({ error }: { error: Error }) {
   if (error instanceof ApiError && error.status === 404) {
     return <p role="alert">This Entity no longer exists.</p>
   }
-  const requestId = error instanceof ApiError ? error.requestId : undefined
   return (
     <p role="alert" className="text-red-700">
-      Could not load this Entity{requestId ? ` (request id: ${requestId})` : ''}.
+      Could not load this Entity{requestIdSuffix(error)}.
     </p>
   )
 }

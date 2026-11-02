@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useFieldArray, useForm, type FieldPath, type UseFormSetError } from 'react-hook-form'
-import { ApiError } from '../../api/client'
+import { ApiError, generalMessage } from '../../api/client'
 import { FieldError } from '../../components/FieldError'
 import {
   ENTITY_TYPE_LABELS,
@@ -278,12 +278,4 @@ function formFieldFor(field: string): FieldPath<EntityFormValues> | undefined {
     return 'attributes'
   }
   return undefined
-}
-
-/** A failed request as one message for the operator, with the request ID when known. */
-export function generalMessage(error: unknown): string {
-  if (error instanceof ApiError && error.requestId) {
-    return `Something went wrong (request id: ${error.requestId})`
-  }
-  return 'Something went wrong. Please try again.'
 }

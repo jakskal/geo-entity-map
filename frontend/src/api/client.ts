@@ -31,6 +31,20 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * " (request id: …)" when the error is an ApiError that carries a request ID,
+ * otherwise "". Append it to every error message the operator sees.
+ */
+export function requestIdSuffix(error: unknown): string {
+  return error instanceof ApiError && error.requestId ? ` (request id: ${error.requestId})` : ''
+}
+
+/** A failed request as one message for the operator, with the request ID when known. */
+export function generalMessage(error: unknown): string {
+  const suffix = requestIdSuffix(error)
+  return suffix ? `Something went wrong${suffix}` : 'Something went wrong. Please try again.'
+}
+
 type ErrorBody = {
   error?: ApiErrorCode
   message?: string

@@ -3,6 +3,9 @@ import { ENTITY_TYPES, STATUSES, type EntityInput } from './entity'
 
 // The spec's validation rules, mirrored for immediate feedback in the form.
 // The backend checks the same rules again and has the final say.
+// Lengths: zod 4.6's string .min()/.max() count Unicode code points, the
+// same as the backend's characters (Go runes), so an emoji counts once.
+// CreateEntity.test.tsx checks this at the limits.
 
 export const MAX_ATTRIBUTES = 20
 
@@ -44,7 +47,18 @@ export const entityFormSchema = z.object({
         value: z.string().max(200, 'Attribute value must be at most 200 characters'),
       }),
     )
-    .max(MAX_ATTRIBUTES, `At most ${MAX_ATTRIBUTES} Attributes are allowed`),
+    .max(MAX_ATTRIBUTES, `At most ${MAX_ATTRIBUTES} Attributes are allowed`)
+    // The API takes a name → value map, so a repeated name would silently
+    // overwrite the earlier row; flag every repeat instead.
+    .superRefine((rows, ctx) => {
+      const seen = new Set<string>()
+      rows.forEach(({ name }, index) => {
+        if (seen.has(name)) {
+          ctx.addIssue({ code: 'custom', message: 'Duplicate Attribute name', path: [index, 'name'] })
+        }
+        seen.add(name)
+      })
+    }),
 })
 
 /** What the form fields hold while the operator edits them. */

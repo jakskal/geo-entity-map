@@ -1,13 +1,13 @@
 import { useId, useState } from 'react'
-import { ApiError } from '../../api/client'
+import { requestIdSuffix } from '../../api/client'
 import { useDeleteEntity } from '../../api/entities'
 import type { Entity } from './entity'
 
 /**
  * "Delete" action for the details panel. It asks for confirmation in an
  * in-app dialog (not the browser's `confirm()`); `onDeleted` runs once the
- * backend has deleted the Entity. A failure is shown in the dialog and the
- * Entity stays.
+ * Entity is deleted (or was already gone). A failure is shown in the dialog
+ * and the Entity stays.
  */
 export function DeleteEntityButton({ entity, onDeleted }: { entity: Entity; onDeleted: () => void }) {
   const [confirming, setConfirming] = useState(false)
@@ -54,7 +54,6 @@ function ConfirmDeleteDialog({
   onCancel: () => void
 }) {
   const titleId = useId()
-  const requestId = error instanceof ApiError ? error.requestId : undefined
 
   return (
     <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/40">
@@ -71,7 +70,7 @@ function ConfirmDeleteDialog({
         <p className="mt-2">This Entity will be removed permanently.</p>
         {error && (
           <p role="alert" className="mt-2 text-red-700">
-            Could not delete this Entity{requestId ? ` (request id: ${requestId})` : ''}.
+            Could not delete this Entity{requestIdSuffix(error)}.
           </p>
         )}
         <div className="mt-4 flex justify-end gap-2">

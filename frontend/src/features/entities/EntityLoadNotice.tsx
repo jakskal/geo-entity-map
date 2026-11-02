@@ -1,5 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query'
-import { ApiError } from '../../api/client'
+import { requestIdSuffix } from '../../api/client'
 import type { Entity } from './entity'
 
 const NOTICE = 'absolute top-4 left-1/2 z-[1000] -translate-x-1/2 rounded bg-white px-4 py-2 shadow'
@@ -8,7 +8,7 @@ const NOTICE = 'absolute top-4 left-1/2 z-[1000] -translate-x-1/2 rounded bg-whi
  * Loading, error (with retry) and empty-state notices over the map. With
  * filters active, an empty result is reported by the side list instead.
  */
-export function EntityListState({
+export function EntityLoadNotice({
   query,
   filtered = false,
 }: {
@@ -46,8 +46,4 @@ export function EntityListState({
   }
 
   return null
-}
-
-function requestIdSuffix(error: Error): string {
-  return error instanceof ApiError && error.requestId ? ` (request id: ${error.requestId})` : ''
 }

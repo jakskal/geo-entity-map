@@ -1,4 +1,5 @@
 import { useCreateEntity } from '../../api/entities'
+import { SidePanel } from '../../components/SidePanel'
 import type { Location } from './entity'
 import { EntityForm } from './EntityForm'
 
@@ -13,7 +14,7 @@ export function CreateEntityPanel({
   const createEntity = useCreateEntity()
 
   return (
-    <aside className="absolute top-4 right-4 z-[1000] max-h-[calc(100%-2rem)] w-96 overflow-y-auto rounded bg-white p-4 shadow-lg">
+    <SidePanel className="w-96 overflow-y-auto p-4">
       <EntityForm
         title="New Entity"
         initialValues={{
@@ -31,6 +32,6 @@ export function CreateEntityPanel({
         }}
         onCancel={onClose}
       />
-    </aside>
+    </SidePanel>
   )
 }

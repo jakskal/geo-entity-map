@@ -4,6 +4,7 @@ import {
   ENTITY_TYPES,
   STATUS_LABELS,
   STATUSES,
+  hasActiveFilters,
   type Entity,
   type EntityFilters,
   type EntityType,
@@ -34,7 +35,7 @@ export function EntityList({
   onSelectEntity,
 }: EntityListProps) {
   const [open, setOpen] = useState(true)
-  const hasFilters = Boolean(filters.type || filters.status)
+  const hasFilters = hasActiveFilters(filters)
 
   return (
     <section

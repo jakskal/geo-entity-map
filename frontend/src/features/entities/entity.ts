@@ -27,6 +27,11 @@ export type EntityFilters = {
   status?: Status
 }
 
+/** Whether any list filter is set. */
+export function hasActiveFilters(filters: EntityFilters): boolean {
+  return Boolean(filters.type || filters.status)
+}
+
 export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
   vehicle: 'Vehicle',
   iot_device: 'IoT device',
